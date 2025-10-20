@@ -1,0 +1,141 @@
+# Bitcoin Futures Trading System Configuration
+
+# API Configuration
+binance:
+  testnet: true
+  api_key: ${BINANCE_API_KEY}
+  api_secret: ${BINANCE_API_SECRET}
+  futures_testnet_url: "https://testnet.binancefuture.com"
+  futures_url: "https://fapi.binance.com"
+  spot_url: "https://api.binance.com"
+  ws_url: "wss://stream.binance.com:9443"
+  ws_testnet_url: "wss://stream.binancefuture.com"
+
+# Data Collection
+data_collection:
+  symbols: ["BTCUSDT", "ETHUSDT"]
+  timeframes: ["1m", "5m", "15m", "1h", "4h", "1d"]
+  klines_batch_size: 1000
+  orderbook_depth: 20
+  orderbook_update_interval_ms: 100
+  trade_tick_buffer_size: 10000
+
+# Database Configuration
+database:
+  type: "postgresql"  # Options: postgresql, clickhouse, sqlite
+  postgresql:
+    host: "localhost"
+    port: 5432
+    database: "btc_trading"
+    user: "trading_user"
+    password: ${DB_PASSWORD}
+  clickhouse:
+    host: "localhost"
+    port: 9000
+    database: "btc_trading"
+    user: "default"
+    password: ""
+
+# Feature Engineering
+features:
+  price_features:
+    enabled: true
+    log_returns_windows: [1, 5, 60, 240, 1440]  # minutes
+    volatility_windows: [20, 60, 240]
+  
+  technical_indicators:
+    enabled: true
+    ema_periods: [8, 21, 55]
+    rsi_period: 14
+    macd_fast: 12
+    macd_slow: 26
+    macd_signal: 9
+    adx_period: 14
+  
+  liquidity_features:
+    enabled: true
+    spread_windows: [5, 20]
+    depth_levels: [5, 10, 20]
+  
+  derivatives_features:
+    enabled: true
+    funding_rate_window: 8  # hours
+    oi_change_window: 24  # hours
+  
+  onchain_features:
+    enabled: false  # Requires Glassnode API
+    exchange_flow_window: 7  # days
+
+# Model Configuration
+models:
+  long_term:
+    type: "temporal_fusion_transformer"  # Options: tft, nbeats, ensemble
+    input_length: 168  # 7 days of hourly data
+    output_length: 30  # 30 days ahead
+    hidden_size: 64
+    num_heads: 4
+    num_layers: 2
+    dropout: 0.1
+    learning_rate: 0.001
+    batch_size: 32
+    epochs: 100
+    early_stopping_patience: 10
+  
+  short_term:
+    type: "transformer"  # Options: transformer, lstm, informer
+    input_length: 60  # 1 hour of minute data
+    output_length: 5  # 5 minutes ahead
+    hidden_size: 128
+    num_heads: 8
+    num_layers: 3
+    dropout: 0.1
+    learning_rate: 0.0005
+    batch_size: 64
+    epochs: 50
+
+# Risk Management
+risk_management:
+  max_leverage: 5
+  max_position_size_usd: 100000
+  max_drawdown_percent: 10
+  liquidation_buffer_percent: 5
+  funding_rate_threshold: 0.001  # 0.1% per 8 hours
+  circuit_breaker_enabled: true
+  circuit_breaker_loss_percent: 5
+
+# Backtesting
+backtesting:
+  start_date: "2023-01-01"
+  end_date: "2024-10-20"
+  initial_capital: 100000
+  maker_fee: 0.0002
+  taker_fee: 0.0004
+  slippage_percent: 0.01
+  leverage: 3
+  use_walk_forward: true
+  walk_forward_window_days: 30
+  walk_forward_step_days: 7
+
+# Trading Signals
+trading_signals:
+  long_term_threshold: 0.55  # Probability threshold for long-term signals
+  short_term_threshold: 0.60  # Probability threshold for short-term signals
+  signal_confirmation_bars: 2
+  max_concurrent_positions: 3
+
+# Monitoring & Logging
+monitoring:
+  log_level: "INFO"
+  log_file: "logs/trading.log"
+  prometheus_port: 8000
+  metrics_update_interval_seconds: 60
+  data_drift_check_interval_hours: 24
+
+# Execution
+execution:
+  mode: "paper"  # Options: paper, testnet, live
+  order_type: "limit"  # Options: limit, market
+  order_timeout_seconds: 30
+  max_retries: 3
+  retry_delay_seconds: 1
+
