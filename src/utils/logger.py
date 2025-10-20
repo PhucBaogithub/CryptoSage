@@ -12,23 +12,26 @@ def setup_logger(
     log_file: str = "logs/trading.log",
     rotation: str = "500 MB",
     retention: str = "10 days",
-) -> None:
+):
     """Setup logger with file and console handlers.
-    
+
     Args:
         name: Logger name
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_file: Path to log file
         rotation: Log rotation policy
         retention: Log retention policy
+
+    Returns:
+        Logger instance
     """
     # Remove default handler
     logger.remove()
-    
+
     # Create log directory if it doesn't exist
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Console handler
     logger.add(
         sys.stdout,
@@ -38,7 +41,7 @@ def setup_logger(
         level=log_level,
         colorize=True,
     )
-    
+
     # File handler
     logger.add(
         log_file,
@@ -47,8 +50,9 @@ def setup_logger(
         rotation=rotation,
         retention=retention,
     )
-    
+
     logger.info(f"Logger initialized: {name}")
+    return logger
 
 
 def get_logger(name: str):
