@@ -547,9 +547,7 @@ function initializeBacktestEquityChart() {
             plugins: { legend: { display: false } },
             scales: {
                 y: { beginAtZero: false, grid: { color: '#e0e0e0' }, ticks: { color: '#666666' } },
-                x: { grid: { display: false }, ticks: { color: '#666666' }
-                    }
-                }
+                x: { grid: { display: false }, ticks: { color: '#666666' } }
             }
         }
     });
