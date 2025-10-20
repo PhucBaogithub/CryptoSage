@@ -2,26 +2,60 @@
 
 A comprehensive, production-grade system for Bitcoin price prediction and automated futures trading on Binance with a modern web dashboard.
 
-## 🚀 Quick Start (5 Minutes)
+## 🚀 Quick Start (30 Seconds)
 
-### 1. Install Dependencies
+### Automatic Startup (Recommended)
 ```bash
-pip install -e .
+# macOS/Linux
+python3 start.py
+
+# Windows
+python start.py
 ```
 
-### 2. Start Backend API (Terminal 1)
+### Manual Startup (Alternative)
+
+#### 1. Install Dependencies
 ```bash
-python -m src.api.server
+pip install -r requirements.txt
 ```
 
-### 3. Start Frontend Server (Terminal 2)
+#### 2. Start Backend API (Terminal 1)
 ```bash
-cd frontend
-python server.py
+python3 -m src.api.server
 ```
 
-### 4. Open Dashboard
+#### 3. Start Frontend Server (Terminal 2)
+```bash
+python3 frontend/server.py
+```
+
+#### 4. Open Dashboard
 Open your browser to: **http://localhost:3000**
+
+### Access Points
+- **Dashboard**: http://localhost:3000
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+
+### Cleanup Project
+```bash
+# macOS/Linux
+python3 cleanup.py
+./cleanup.sh
+
+# Windows
+python cleanup.py
+cleanup.bat
+```
+
+## 📚 Documentation
+
+- **QUICK_START.md** - Quick startup guide (30 seconds)
+- **STARTUP_GUIDE.md** - Comprehensive startup guide
+- **PROJECT_SUMMARY.md** - Project overview and features
+- **SETUP.md** - Detailed setup guide (Vietnamese)
+- **COMPLETION_SUMMARY.md** - Completion summary
 
 ## 📊 Features
 
