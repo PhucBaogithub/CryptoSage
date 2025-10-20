@@ -150,7 +150,7 @@ async function apiCall(endpoint, method = 'GET', data = null) {
 
 async function updateSystemStatus() {
     try {
-        const status = await apiCall('/api/status');
+        const status = await apiCall('/status');
         const indicator = document.getElementById('status-indicator');
         const text = document.getElementById('status-text');
 
@@ -171,7 +171,7 @@ async function updateSystemStatus() {
 async function loadInitialData() {
     try {
         // Load account info
-        const account = await apiCall('/api/trading/account');
+        const account = await apiCall('/trading/account');
         if (account) {
             const balanceEl = document.getElementById('balance');
             const equityEl = document.getElementById('equity');
@@ -189,7 +189,7 @@ async function loadInitialData() {
 
     try {
         // Load positions
-        const positions = await apiCall('/api/trading/positions');
+        const positions = await apiCall('/trading/positions');
         if (positions && positions.positions && positions.positions.length > 0) {
             updatePositionsTable(positions.positions);
         }
@@ -199,7 +199,7 @@ async function loadInitialData() {
 
     try {
         // Load backtest results
-        const results = await apiCall('/api/backtest/results');
+        const results = await apiCall('/backtest/results');
         if (results) {
             updateBacktestResults(results);
         }
@@ -209,7 +209,7 @@ async function loadInitialData() {
 
     try {
         // Load model status
-        const modelStatus = await apiCall('/api/models/status');
+        const modelStatus = await apiCall('/models/status');
         if (modelStatus) {
             const ltStatusEl = document.getElementById('lt-status');
             const ltAccuracyEl = document.getElementById('lt-accuracy');
@@ -231,7 +231,7 @@ async function loadInitialData() {
 
     try {
         // Load predictions
-        const predictions = await apiCall('/api/models/predictions');
+        const predictions = await apiCall('/models/predictions');
         if (predictions) {
             const elem1 = document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(1) .value');
             const elem2 = document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(2) .value');
@@ -255,7 +255,7 @@ async function collectData() {
     const timeframes = Array.from(document.getElementById('timeframes-select').selectedOptions).map(o => o.value);
     const limit = parseInt(document.getElementById('limit-input').value);
 
-    const result = await apiCall('/api/data/collect', 'POST', {
+    const result = await apiCall('/data/collect', 'POST', {
         symbols,
         timeframes,
         limit
@@ -271,7 +271,7 @@ async function collectData() {
 // ============================================================================
 
 async function trainModels() {
-    const result = await apiCall('/api/models/train?symbol=BTCUSDT', 'POST');
+    const result = await apiCall('/models/train?symbol=BTCUSDT', 'POST');
     if (result) {
         showNotification('Model training started', 'success');
     }
@@ -288,7 +288,7 @@ async function runBacktest() {
     const endDate = document.getElementById('backtest-end').value;
     const capital = parseFloat(document.getElementById('backtest-capital').value);
 
-    const result = await apiCall('/api/backtest/run', 'POST', {
+    const result = await apiCall('/backtest/run', 'POST', {
         symbol,
         timeframe,
         start_date: startDate,
@@ -305,17 +305,17 @@ async function runBacktest() {
 }
 
 async function loadBacktestResults() {
-    const results = await apiCall('/api/backtest/results');
+    const results = await apiCall('/backtest/results');
     if (results) {
         updateBacktestResults(results);
     }
 
-    const trades = await apiCall('/api/backtest/trades');
+    const trades = await apiCall('/backtest/trades');
     if (trades) {
         updateTradesTable(trades.trades);
     }
 
-    const equity = await apiCall('/api/backtest/equity-curve');
+    const equity = await apiCall('/backtest/equity-curve');
     if (equity) {
         updateBacktestEquityChart(equity.equity_curve);
     }
@@ -357,7 +357,7 @@ async function startTrading() {
 }
 
 async function stopTrading() {
-    const result = await apiCall('/api/trading/stop', 'POST');
+    const result = await apiCall('/trading/stop', 'POST');
     if (result) {
         showNotification('Trading stopped', 'success');
     }
@@ -370,7 +370,7 @@ async function placeOrder() {
     const leverage = parseFloat(document.getElementById('order-leverage').value);
     const mode = document.getElementById('trading-mode').value;
 
-    const result = await apiCall('/api/trading/place-order', 'POST', {
+    const result = await apiCall('/trading/place-order', 'POST', {
         symbol,
         side,
         size,
@@ -409,7 +409,7 @@ async function calculateRiskMetrics() {
     const leverage = parseFloat(document.getElementById('risk-leverage').value);
     const fundingRate = parseFloat(document.getElementById('risk-funding-rate').value);
 
-    const result = await apiCall('/api/risk/metrics', 'POST', {
+    const result = await apiCall('/risk/metrics', 'POST', {
         entry_price: entryPrice,
         current_price: currentPrice,
         position_size_usd: positionSize,
