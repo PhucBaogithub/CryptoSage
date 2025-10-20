@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
+import aiohttp
 
 from src.utils import setup_logger
 
@@ -560,6 +561,78 @@ async def get_short_term_chart_data(symbol: str = "BTCUSDT"):
         "confidence_upper": [p * 1.05 for p in prices],
         "confidence_lower": [p * 0.95 for p in prices]
     }
+
+
+# ============================================================================
+# Real-time Price Endpoints
+# ============================================================================
+
+@app.get("/api/prices/current")
+async def get_current_prices(symbols: str = "BTCUSDT,ETHUSDT,BNBUSDT"):
+    """Get current prices from Binance API."""
+    try:
+        symbol_list = symbols.split(',')
+        prices = {}
+
+        async with aiohttp.ClientSession() as session:
+            for symbol in symbol_list:
+                try:
+                    url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            prices[symbol] = {
+                                "price": float(data['price']),
+                                "timestamp": datetime.utcnow().isoformat()
+                            }
+                        else:
+                            prices[symbol] = {"error": f"Status {resp.status}"}
+                except Exception as e:
+                    logger.error(f"Error fetching price for {symbol}: {e}")
+                    prices[symbol] = {"error": str(e)}
+
+        return {
+            "status": "success",
+            "prices": prices,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error in get_current_prices: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+
+@app.get("/api/prices/single")
+async def get_single_price(symbol: str = "BTCUSDT"):
+    """Get single cryptocurrency price from Binance API."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return {
+                        "status": "success",
+                        "symbol": symbol,
+                        "price": float(data['price']),
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": f"Binance API returned status {resp.status}",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+    except Exception as e:
+        logger.error(f"Error fetching price for {symbol}: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
 
 # ============================================================================

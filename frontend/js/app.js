@@ -4,6 +4,20 @@
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
+// Real-time price data
+let currentPrices = {};
+let priceUpdateInterval = null;
+let lastPriceUpdate = null;
+
+// Supported cryptocurrencies
+const SUPPORTED_COINS = [
+    'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT',
+    'ADAUSDT', 'AVAXUSDT', 'DOTUSDT', 'ATOMUSDT',
+    'UNIUSDT', 'LINKUSDT', 'AAVEUSDT', 'SUSHIUSDT',
+    'FILUSDT', 'ARWEAVEUSDT',
+    'DOGEUSDT', 'MATICUSDT', 'LTCUSDT', 'VETUSDT', 'THETAUSDT', 'FTMUSDT'
+];
+
 // Chart instances
 let equityChart = null;
 let returnsChart = null;
@@ -46,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
         loadInitialData();
         connectWebSocket();
+
+        // Start real-time price updates every 30 seconds
+        startPriceUpdates();
 
         // Retry status update every 5 seconds
         setInterval(updateSystemStatus, 5000);
@@ -147,6 +164,106 @@ async function apiCall(endpoint, method = 'GET', data = null) {
         console.error(`API Error: ${endpoint}`, error);
         showNotification('Error: ' + error.message, 'error');
         return null;
+    }
+}
+
+// ============================================================================
+// Real-time Price Updates
+// ============================================================================
+
+function startPriceUpdates() {
+    // Fetch prices immediately
+    updateAllPrices();
+
+    // Then update every 30 seconds
+    if (priceUpdateInterval) clearInterval(priceUpdateInterval);
+    priceUpdateInterval = setInterval(updateAllPrices, 30000);
+}
+
+async function updateAllPrices() {
+    try {
+        const symbolsStr = SUPPORTED_COINS.join(',');
+        const response = await axios.get(`${API_BASE_URL}/prices/current?symbols=${symbolsStr}`);
+
+        if (response.data.status === 'success') {
+            currentPrices = response.data.prices;
+            lastPriceUpdate = new Date();
+
+            // Update UI with new prices
+            updatePriceDisplays();
+            updatePaperTradingPrices();
+            updatePredictionsPrices();
+            updateFuturesTradingPrices();
+
+            // Update last update time
+            updateLastUpdateTime();
+        }
+    } catch (error) {
+        console.error('Error updating prices:', error);
+    }
+}
+
+function updatePriceDisplays() {
+    // Update all price displays across the dashboard
+    Object.entries(currentPrices).forEach(([symbol, data]) => {
+        if (data.price) {
+            const priceElements = document.querySelectorAll(`[data-price-symbol="${symbol}"]`);
+            priceElements.forEach(el => {
+                el.textContent = `$${parseFloat(data.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            });
+        }
+    });
+}
+
+function updatePaperTradingPrices() {
+    // Update paper trading position P&L based on current prices
+    if (paperTradingData && paperTradingData.positions) {
+        paperTradingData.positions.forEach(position => {
+            const priceData = currentPrices[position.symbol];
+            if (priceData && priceData.price) {
+                position.current_price = parseFloat(priceData.price);
+                position.pnl = (position.current_price - position.entry_price) * position.size * (position.side === 'long' ? 1 : -1);
+            }
+        });
+        updatePaperTradingUI();
+    }
+}
+
+function updatePredictionsPrices() {
+    // Update current price display in predictions tab
+    const selectedCoin = document.getElementById('predictions-coin-select');
+    if (selectedCoin) {
+        const symbol = selectedCoin.value;
+        const priceData = currentPrices[symbol];
+        if (priceData && priceData.price) {
+            const priceDisplay = document.getElementById('current-price-display');
+            if (priceDisplay) {
+                priceDisplay.textContent = `$${parseFloat(priceData.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+        }
+    }
+}
+
+function updateFuturesTradingPrices() {
+    // Update current price display in futures trading tab
+    const selectedSymbol = document.getElementById('order-symbol');
+    if (selectedSymbol) {
+        const symbol = selectedSymbol.value;
+        const priceData = currentPrices[symbol];
+        if (priceData && priceData.price) {
+            const priceDisplay = document.getElementById('current-market-price');
+            if (priceDisplay) {
+                priceDisplay.textContent = `$${parseFloat(priceData.price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+        }
+    }
+}
+
+function updateLastUpdateTime() {
+    const timeElement = document.getElementById('last-update-time');
+    if (timeElement && lastPriceUpdate) {
+        const time = lastPriceUpdate.toLocaleTimeString();
+        timeElement.textContent = `Last updated: ${time}`;
     }
 }
 
@@ -1034,7 +1151,7 @@ function connectWebSocket() {
 
 async function updatePredictions() {
     try {
-        const symbol = document.getElementById('prediction-symbol').value;
+        const symbol = document.getElementById('predictions-coin-select').value;
 
         // Load long-term predictions
         const ltResponse = await apiCall(`/predictions/long-term?symbol=${symbol}`);
@@ -1289,7 +1406,7 @@ function initializeShortTermPredictionsChart(data) {
 
 async function updateLongTermChart() {
     try {
-        const symbol = document.getElementById('prediction-symbol').value;
+        const symbol = document.getElementById('predictions-coin-select').value;
         const timeframeFilter = document.getElementById('lt-timeframe-filter').value;
 
         const chartData = await apiCall(`/predictions/chart-data/long-term?symbol=${symbol}`);

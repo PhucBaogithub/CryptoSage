@@ -17,6 +17,7 @@
                 <div class="header-status">
                     <span id="status-indicator" class="status-dot"></span>
                     <span id="status-text">Connecting...</span>
+                    <span id="last-update-time" style="margin-left: 20px; font-size: 12px; color: #999;">Last updated: --:--:--</span>
                 </div>
             </div>
         </header>
@@ -559,6 +560,10 @@
                                 </optgroup>
                             </select>
                         </div>
+                        <div class="metric">
+                            <span class="label">Current Market Price</span>
+                            <span class="value" id="current-market-price">$46,000</span>
+                        </div>
                         <div class="form-group">
                             <label>Side</label>
                             <select id="order-side">
@@ -637,7 +642,7 @@
                         <h2>Select Cryptocurrency</h2>
                         <div class="form-group">
                             <label>Choose Coin</label>
-                            <select id="prediction-symbol" onchange="updatePredictions()">
+                            <select id="predictions-coin-select" onchange="updatePredictions()">
                                 <optgroup label="Top Cryptocurrencies">
                                     <option value="BTCUSDT">Bitcoin (BTC)</option>
                                     <option value="ETHUSDT">Ethereum (ETH)</option>
@@ -673,7 +678,7 @@
                         </div>
                         <div class="metric">
                             <span class="label">Current Price</span>
-                            <span class="value" id="pred-current-price">$46,000</span>
+                            <span class="value" id="current-price-display">$46,000</span>
                         </div>
                         <div class="metric">
                             <span class="label">Last Updated</span>
