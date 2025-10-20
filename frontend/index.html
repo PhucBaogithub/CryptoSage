@@ -28,7 +28,8 @@
             <button class="nav-btn" data-tab="data">Data</button>
             <button class="nav-btn" data-tab="models">Models</button>
             <button class="nav-btn" data-tab="backtest">Backtest</button>
-            <button class="nav-btn" data-tab="trading">Trading</button>
+            <button class="nav-btn" data-tab="futures">Futures Trading</button>
+            <button class="nav-btn" data-tab="paper-trading">Paper Trading</button>
             <button class="nav-btn" data-tab="risk">Risk</button>
         </nav>
 
@@ -499,17 +500,17 @@
                 </div>
             </section>
 
-            <!-- Trading Tab -->
-            <section id="trading" class="tab-content">
+            <!-- Futures Trading Tab -->
+            <section id="futures" class="tab-content">
                 <div class="grid-2">
                     <div class="card">
                         <h2>Trading Control</h2>
                         <div class="form-group">
                             <label>Trading Mode</label>
                             <select id="trading-mode">
-                                <option selected>paper</option>
-                                <option>testnet</option>
-                                <option>live</option>
+                                <option value="paper" selected>Paper Trading</option>
+                                <option value="testnet">Testnet</option>
+                                <option value="live">Live Trading</option>
                             </select>
                         </div>
                         <div class="metric">
@@ -525,18 +526,44 @@
                         <div class="form-group">
                             <label>Symbol</label>
                             <select id="order-symbol">
-                                <option selected>BTCUSDT</option>
-                                <option>ETHUSDT</option>
-                                <option>BNBUSDT</option>
-                                <option>SOLUSDT</option>
-                                <option>XRPUSDT</option>
+                                <optgroup label="Top Cryptocurrencies">
+                                    <option value="BTCUSDT" selected>Bitcoin (BTC)</option>
+                                    <option value="ETHUSDT">Ethereum (ETH)</option>
+                                    <option value="BNBUSDT">Binance Coin (BNB)</option>
+                                    <option value="SOLUSDT">Solana (SOL)</option>
+                                    <option value="XRPUSDT">Ripple (XRP)</option>
+                                </optgroup>
+                                <optgroup label="Layer 1 & Scaling">
+                                    <option value="ADAUSDT">Cardano (ADA)</option>
+                                    <option value="AVAXUSDT">Avalanche (AVAX)</option>
+                                    <option value="DOTUSDT">Polkadot (DOT)</option>
+                                    <option value="ATOMUSDT">Cosmos (ATOM)</option>
+                                </optgroup>
+                                <optgroup label="DeFi & Tokens">
+                                    <option value="UNIUSDT">Uniswap (UNI)</option>
+                                    <option value="LINKUSDT">Chainlink (LINK)</option>
+                                    <option value="AAVEUSDT">Aave (AAVE)</option>
+                                    <option value="SUSHIUSDT">SushiSwap (SUSHI)</option>
+                                </optgroup>
+                                <optgroup label="Storage & Computing">
+                                    <option value="FILUSDT">Filecoin (FIL)</option>
+                                    <option value="ARWEAVEUSDT">Arweave (AR)</option>
+                                </optgroup>
+                                <optgroup label="Other Altcoins">
+                                    <option value="DOGEUSDT">Dogecoin (DOGE)</option>
+                                    <option value="MATICUSDT">Polygon (MATIC)</option>
+                                    <option value="LTCUSDT">Litecoin (LTC)</option>
+                                    <option value="VETUSDT">VeChain (VET)</option>
+                                    <option value="THETAUSDT">Theta (THETA)</option>
+                                    <option value="FTMUSDT">Fantom (FTM)</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Side</label>
                             <select id="order-side">
-                                <option>long</option>
-                                <option>short</option>
+                                <option value="long">Long (Buy)</option>
+                                <option value="short">Short (Sell)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -611,18 +638,37 @@
                         <div class="form-group">
                             <label>Choose Coin</label>
                             <select id="prediction-symbol" onchange="updatePredictions()">
-                                <option value="BTCUSDT">Bitcoin (BTC)</option>
-                                <option value="ETHUSDT">Ethereum (ETH)</option>
-                                <option value="BNBUSDT">Binance Coin (BNB)</option>
-                                <option value="ADAUSDT">Cardano (ADA)</option>
-                                <option value="XRPUSDT">Ripple (XRP)</option>
-                                <option value="DOGEUSDT">Dogecoin (DOGE)</option>
-                                <option value="SOLUSDT">Solana (SOL)</option>
-                                <option value="MATICUSDT">Polygon (MATIC)</option>
-                                <option value="LINKUSDT">Chainlink (LINK)</option>
-                                <option value="LTCUSDT">Litecoin (LTC)</option>
-                                <option value="AVAXUSDT">Avalanche (AVAX)</option>
-                                <option value="UNIUSDT">Uniswap (UNI)</option>
+                                <optgroup label="Top Cryptocurrencies">
+                                    <option value="BTCUSDT">Bitcoin (BTC)</option>
+                                    <option value="ETHUSDT">Ethereum (ETH)</option>
+                                    <option value="BNBUSDT">Binance Coin (BNB)</option>
+                                    <option value="SOLUSDT">Solana (SOL)</option>
+                                    <option value="XRPUSDT">Ripple (XRP)</option>
+                                </optgroup>
+                                <optgroup label="Layer 1 & Scaling">
+                                    <option value="ADAUSDT">Cardano (ADA)</option>
+                                    <option value="AVAXUSDT">Avalanche (AVAX)</option>
+                                    <option value="DOTUSDT">Polkadot (DOT)</option>
+                                    <option value="ATOMUSDT">Cosmos (ATOM)</option>
+                                </optgroup>
+                                <optgroup label="DeFi & Tokens">
+                                    <option value="UNIUSDT">Uniswap (UNI)</option>
+                                    <option value="LINKUSDT">Chainlink (LINK)</option>
+                                    <option value="AAVEUSDT">Aave (AAVE)</option>
+                                    <option value="SUSHIUSDT">SushiSwap (SUSHI)</option>
+                                </optgroup>
+                                <optgroup label="Storage & Computing">
+                                    <option value="FILUSDT">Filecoin (FIL)</option>
+                                    <option value="ARWEAVEUSDT">Arweave (AR)</option>
+                                </optgroup>
+                                <optgroup label="Other Altcoins">
+                                    <option value="DOGEUSDT">Dogecoin (DOGE)</option>
+                                    <option value="MATICUSDT">Polygon (MATIC)</option>
+                                    <option value="LTCUSDT">Litecoin (LTC)</option>
+                                    <option value="VETUSDT">VeChain (VET)</option>
+                                    <option value="THETAUSDT">Theta (THETA)</option>
+                                    <option value="FTMUSDT">Fantom (FTM)</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="metric">
@@ -659,6 +705,18 @@
                 <div class="grid-1">
                     <div class="card">
                         <h2>Long-term Price Predictions (3-36 Months)</h2>
+                        <div class="form-group">
+                            <label>Filter by Timeframe</label>
+                            <select id="lt-timeframe-filter" onchange="updateLongTermChart()">
+                                <option value="all">All Timeframes (3M-36M)</option>
+                                <option value="3">3 Months</option>
+                                <option value="6">6 Months</option>
+                                <option value="9">9 Months</option>
+                                <option value="12">1 Year (12 Months)</option>
+                                <option value="24">2 Years (24 Months)</option>
+                                <option value="36">3 Years (36 Months)</option>
+                            </select>
+                        </div>
                         <div class="chart-container">
                             <canvas id="long-term-predictions-chart"></canvas>
                         </div>
@@ -720,6 +778,126 @@
                                     <td>+0.22%</td>
                                     <td>70%</td>
                                     <td><span class="badge buy">BUY</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Paper Trading Tab -->
+            <section id="paper-trading" class="tab-content">
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Paper Trading Account</h2>
+                        <div class="metric">
+                            <span class="label">Account Balance</span>
+                            <span class="value" id="paper-balance">$100,000.00</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Portfolio Value</span>
+                            <span class="value" id="paper-portfolio-value">$100,000.00</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Total P&L</span>
+                            <span class="value" id="paper-total-pnl">$0.00</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Return %</span>
+                            <span class="value" id="paper-return-pct">0.00%</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="resetPaperTrading()">Reset Account</button>
+                    </div>
+
+                    <div class="card">
+                        <h2>Place Simulated Trade</h2>
+                        <div class="form-group">
+                            <label>Cryptocurrency</label>
+                            <select id="paper-symbol">
+                                <option value="BTCUSDT">Bitcoin (BTC)</option>
+                                <option value="ETHUSDT">Ethereum (ETH)</option>
+                                <option value="BNBUSDT">Binance Coin (BNB)</option>
+                                <option value="SOLUSDT">Solana (SOL)</option>
+                                <option value="XRPUSDT">Ripple (XRP)</option>
+                                <option value="ADAUSDT">Cardano (ADA)</option>
+                                <option value="AVAXUSDT">Avalanche (AVAX)</option>
+                                <option value="DOTUSDT">Polkadot (DOT)</option>
+                                <option value="ATOMUSDT">Cosmos (ATOM)</option>
+                                <option value="FILUSDT">Filecoin (FIL)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Trade Type</label>
+                            <select id="paper-trade-type">
+                                <option value="long">Long (Buy)</option>
+                                <option value="short">Short (Sell)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (USD)</label>
+                            <input type="number" id="paper-amount" value="1000" step="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Leverage</label>
+                            <input type="number" id="paper-leverage" value="1" step="0.1" min="1" max="125">
+                        </div>
+                        <button class="btn btn-primary" onclick="executePaperTrade()">Execute Trade</button>
+                    </div>
+                </div>
+
+                <div class="grid-1">
+                    <div class="card">
+                        <h2>Portfolio Value Over Time</h2>
+                        <div class="chart-container">
+                            <canvas id="paper-portfolio-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-1">
+                    <div class="card">
+                        <h2>Open Positions</h2>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Entry Price</th>
+                                    <th>Current Price</th>
+                                    <th>Amount (USD)</th>
+                                    <th>P&L</th>
+                                    <th>P&L %</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paper-positions-table">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: #999;">No open positions</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid-1">
+                    <div class="card">
+                        <h2>Trade History</h2>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Entry Price</th>
+                                    <th>Exit Price</th>
+                                    <th>Amount (USD)</th>
+                                    <th>P&L</th>
+                                    <th>P&L %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paper-history-table">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: #999;">No trade history</td>
                                 </tr>
                             </tbody>
                         </table>

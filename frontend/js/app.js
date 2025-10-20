@@ -397,7 +397,14 @@ async function placeOrder() {
 }
 
 function updatePositionsTable(positions) {
-    const tbody = document.getElementById('positions-table');
+    const tbody = document.getElementById('current-positions');
+    if (!tbody) return;
+
+    if (!positions || positions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No open positions</td></tr>';
+        return;
+    }
+
     tbody.innerHTML = positions.map(pos => `
         <tr>
             <td>${pos.symbol}</td>
@@ -406,7 +413,6 @@ function updatePositionsTable(positions) {
             <td>$${pos.entry_price.toLocaleString()}</td>
             <td>$${pos.current_price.toLocaleString()}</td>
             <td class="${pos.pnl >= 0 ? 'positive' : 'negative'}">$${pos.pnl.toLocaleString()}</td>
-            <td class="${pos.pnl_pct >= 0 ? 'positive' : 'negative'}">${pos.pnl_pct >= 0 ? '+' : ''}${pos.pnl_pct.toFixed(2)}%</td>
         </tr>
     `).join('');
 }
@@ -1261,6 +1267,321 @@ function initializeShortTermPredictionsChart(data) {
                     position: 'top',
                     labels: { color: '#666666', font: { size: 12 } }
                 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: { color: '#e0e0e0' },
+                    ticks: { color: '#666666' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#666666' }
+                }
+            }
+        }
+    });
+}
+
+// ============================================================================
+// Long-term Predictions Filter
+// ============================================================================
+
+async function updateLongTermChart() {
+    try {
+        const symbol = document.getElementById('prediction-symbol').value;
+        const timeframeFilter = document.getElementById('lt-timeframe-filter').value;
+
+        const chartData = await apiCall(`/predictions/chart-data/long-term?symbol=${symbol}`);
+        if (chartData) {
+            initializeLongTermPredictionsChartFiltered(chartData, timeframeFilter);
+        }
+    } catch (error) {
+        console.error('Error updating long-term chart:', error);
+    }
+}
+
+function initializeLongTermPredictionsChartFiltered(data, timeframeFilter) {
+    const ctx = document.getElementById('long-term-predictions-chart');
+    if (!ctx) return;
+
+    let labels = data.labels;
+    let prices = data.prices;
+    let upperBound = data.confidence_upper;
+    let lowerBound = data.confidence_lower;
+
+    // Filter data based on selected timeframe
+    if (timeframeFilter !== 'all') {
+        const maxMonths = parseInt(timeframeFilter);
+        const timeframeMonths = [3, 6, 9, 12, 24, 36];
+        const filterIndex = timeframeMonths.indexOf(maxMonths);
+
+        if (filterIndex >= 0) {
+            labels = labels.slice(0, filterIndex + 1);
+            prices = prices.slice(0, filterIndex + 1);
+            upperBound = upperBound.slice(0, filterIndex + 1);
+            lowerBound = lowerBound.slice(0, filterIndex + 1);
+        }
+    }
+
+    if (longTermPredictionsChart) {
+        longTermPredictionsChart.destroy();
+    }
+
+    longTermPredictionsChart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Predicted Price',
+                    data: prices,
+                    borderColor: chartColors.primary,
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: chartColors.primary,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'Upper Confidence',
+                    data: upperBound,
+                    borderColor: 'rgba(52, 152, 219, 0.3)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Lower Confidence',
+                    data: lowerBound,
+                    borderColor: 'rgba(52, 152, 219, 0.3)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { color: '#666666', font: { size: 12 } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: { color: '#e0e0e0' },
+                    ticks: { color: '#666666' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#666666' }
+                }
+            }
+        }
+    });
+}
+
+// ============================================================================
+// Paper Trading Simulation
+// ============================================================================
+
+let paperTradingData = {
+    initialBalance: 100000,
+    balance: 100000,
+    positions: [],
+    history: [],
+    portfolioHistory: [100000]
+};
+
+function resetPaperTrading() {
+    paperTradingData = {
+        initialBalance: 100000,
+        balance: 100000,
+        positions: [],
+        history: [],
+        portfolioHistory: [100000]
+    };
+    updatePaperTradingUI();
+    showNotification('Paper trading account reset', 'success');
+}
+
+async function executePaperTrade() {
+    try {
+        const symbol = document.getElementById('paper-symbol').value;
+        const tradeType = document.getElementById('paper-trade-type').value;
+        const amount = parseFloat(document.getElementById('paper-amount').value);
+        const leverage = parseFloat(document.getElementById('paper-leverage').value);
+
+        if (amount <= 0) {
+            showNotification('Amount must be greater than 0', 'error');
+            return;
+        }
+
+        if (amount > paperTradingData.balance) {
+            showNotification('Insufficient balance', 'error');
+            return;
+        }
+
+        // Get current price from API
+        const statusData = await apiCall('/status');
+        const currentPrice = 46000; // Mock price - in real app would get from API
+
+        // Create position
+        const position = {
+            id: Date.now(),
+            symbol: symbol,
+            type: tradeType,
+            entryPrice: currentPrice,
+            currentPrice: currentPrice,
+            amount: amount,
+            leverage: leverage,
+            entryTime: new Date().toLocaleString(),
+            pnl: 0,
+            pnlPct: 0
+        };
+
+        paperTradingData.positions.push(position);
+        paperTradingData.balance -= amount;
+
+        updatePaperTradingUI();
+        showNotification(`${tradeType.toUpperCase()} position opened: ${symbol}`, 'success');
+    } catch (error) {
+        console.error('Error executing paper trade:', error);
+        showNotification('Error executing trade', 'error');
+    }
+}
+
+function closePaperPosition(positionId) {
+    const positionIndex = paperTradingData.positions.findIndex(p => p.id === positionId);
+    if (positionIndex >= 0) {
+        const position = paperTradingData.positions[positionIndex];
+
+        // Calculate P&L
+        const pnl = position.type === 'long'
+            ? (position.currentPrice - position.entryPrice) * (position.amount / position.entryPrice)
+            : (position.entryPrice - position.currentPrice) * (position.amount / position.entryPrice);
+
+        const pnlPct = (pnl / position.amount) * 100;
+
+        // Add to history
+        paperTradingData.history.push({
+            ...position,
+            exitPrice: position.currentPrice,
+            exitTime: new Date().toLocaleString(),
+            pnl: pnl,
+            pnlPct: pnlPct
+        });
+
+        // Update balance
+        paperTradingData.balance += position.amount + pnl;
+
+        // Remove from positions
+        paperTradingData.positions.splice(positionIndex, 1);
+
+        updatePaperTradingUI();
+        showNotification(`Position closed: ${position.symbol}`, 'success');
+    }
+}
+
+function updatePaperTradingUI() {
+    // Update account metrics
+    const portfolioValue = paperTradingData.balance +
+        paperTradingData.positions.reduce((sum, p) => sum + p.amount, 0);
+    const totalPnL = portfolioValue - paperTradingData.initialBalance;
+    const returnPct = (totalPnL / paperTradingData.initialBalance) * 100;
+
+    document.getElementById('paper-balance').textContent =
+        `$${paperTradingData.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById('paper-portfolio-value').textContent =
+        `$${portfolioValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById('paper-total-pnl').textContent =
+        `$${totalPnL.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+    document.getElementById('paper-return-pct').textContent =
+        `${returnPct.toFixed(2)}%`;
+
+    // Update positions table
+    const positionsTable = document.getElementById('paper-positions-table');
+    if (paperTradingData.positions.length === 0) {
+        positionsTable.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">No open positions</td></tr>';
+    } else {
+        positionsTable.innerHTML = paperTradingData.positions.map(pos => `
+            <tr>
+                <td>${pos.symbol}</td>
+                <td><span class="badge ${pos.type === 'long' ? 'buy' : 'sell'}">${pos.type.toUpperCase()}</span></td>
+                <td>$${pos.entryPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td>$${pos.currentPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td>$${pos.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td class="${pos.pnl >= 0 ? 'positive' : 'negative'}">$${pos.pnl.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td class="${pos.pnlPct >= 0 ? 'positive' : 'negative'}">${pos.pnlPct.toFixed(2)}%</td>
+                <td><button class="btn btn-sm btn-danger" onclick="closePaperPosition(${pos.id})">Close</button></td>
+            </tr>
+        `).join('');
+    }
+
+    // Update history table
+    const historyTable = document.getElementById('paper-history-table');
+    if (paperTradingData.history.length === 0) {
+        historyTable.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">No trade history</td></tr>';
+    } else {
+        historyTable.innerHTML = paperTradingData.history.map(trade => `
+            <tr>
+                <td>${trade.entryTime}</td>
+                <td>${trade.symbol}</td>
+                <td><span class="badge ${trade.type === 'long' ? 'buy' : 'sell'}">${trade.type.toUpperCase()}</span></td>
+                <td>$${trade.entryPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td>$${trade.exitPrice.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td>$${trade.amount.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td class="${trade.pnl >= 0 ? 'positive' : 'negative'}">$${trade.pnl.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td class="${trade.pnlPct >= 0 ? 'positive' : 'negative'}">${trade.pnlPct.toFixed(2)}%</td>
+            </tr>
+        `).join('');
+    }
+
+    // Update portfolio chart
+    paperTradingData.portfolioHistory.push(portfolioValue);
+    initializePaperPortfolioChart();
+}
+
+let paperPortfolioChart = null;
+
+function initializePaperPortfolioChart() {
+    const ctx = document.getElementById('paper-portfolio-chart');
+    if (!ctx) return;
+
+    if (paperPortfolioChart) {
+        paperPortfolioChart.destroy();
+    }
+
+    paperPortfolioChart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: Array.from({length: paperTradingData.portfolioHistory.length}, (_, i) => `Trade ${i}`),
+            datasets: [{
+                label: 'Portfolio Value',
+                data: paperTradingData.portfolioHistory,
+                borderColor: chartColors.primary,
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 3,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
             },
             scales: {
                 y: {
