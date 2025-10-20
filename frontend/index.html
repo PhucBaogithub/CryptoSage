@@ -503,27 +503,30 @@
 
             <!-- Futures Trading Tab -->
             <section id="futures" class="tab-content">
+                <!-- Trading Control & Order Placement -->
                 <div class="grid-2">
                     <div class="card">
-                        <h2>Trading Control</h2>
+                        <h2>🎮 Trading Control</h2>
                         <div class="form-group">
                             <label>Trading Mode</label>
                             <select id="trading-mode">
-                                <option value="paper" selected>Paper Trading</option>
-                                <option value="testnet">Testnet</option>
-                                <option value="live">Live Trading</option>
+                                <option value="paper" selected>📄 Paper Trading</option>
+                                <option value="testnet">🧪 Testnet</option>
+                                <option value="live">🔴 Live Trading</option>
                             </select>
                         </div>
                         <div class="metric">
                             <span class="label">Status</span>
-                            <span class="value" id="trading-status">Stopped</span>
+                            <span class="value" id="trading-status" style="color: #e74c3c;">Stopped</span>
                         </div>
-                        <button class="btn btn-primary" onclick="startTrading()">Start Trading</button>
-                        <button class="btn btn-secondary" onclick="stopTrading()">Stop Trading</button>
+                        <div style="display: flex; gap: var(--spacing-sm); margin-top: var(--spacing-lg);">
+                            <button class="btn btn-primary" onclick="startTrading()" style="flex: 1;">▶ Start Trading</button>
+                            <button class="btn btn-secondary" onclick="stopTrading()" style="flex: 1; opacity: 0.5; cursor: not-allowed;" disabled>⏹ Stop Trading</button>
+                        </div>
                     </div>
 
                     <div class="card">
-                        <h2>Place Order</h2>
+                        <h2>📊 Place Order</h2>
                         <div class="form-group">
                             <label>Symbol</label>
                             <select id="order-symbol">
@@ -567,25 +570,26 @@
                         <div class="form-group">
                             <label>Side</label>
                             <select id="order-side">
-                                <option value="long">Long (Buy)</option>
-                                <option value="short">Short (Sell)</option>
+                                <option value="long">📈 Long (Buy)</option>
+                                <option value="short">📉 Short (Sell)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Size</label>
-                            <input type="number" id="order-size" value="1.0" step="0.1">
+                            <label>Size (Contracts)</label>
+                            <input type="number" id="order-size" value="1.0" step="0.1" min="0.1" placeholder="Enter size">
                         </div>
                         <div class="form-group">
-                            <label>Leverage</label>
-                            <input type="number" id="order-leverage" value="1.0" step="0.1">
+                            <label>Leverage (1-125x)</label>
+                            <input type="number" id="order-leverage" value="1.0" step="0.1" min="1" max="125" placeholder="Enter leverage">
                         </div>
-                        <button class="btn btn-primary" onclick="placeOrder()">Place Order</button>
+                        <button class="btn btn-primary" onclick="placeOrder()" style="width: 100%; margin-top: var(--spacing-lg);">💰 Place Order</button>
                     </div>
                 </div>
 
+                <!-- Current Positions & Distribution -->
                 <div class="grid-2">
                     <div class="card">
-                        <h2>Current Positions</h2>
+                        <h2>📍 Current Positions</h2>
                         <div class="table-wrapper">
                             <table class="table">
                                 <thead>
@@ -602,14 +606,7 @@
                                 </thead>
                                 <tbody id="current-positions">
                                     <tr>
-                                        <td>BTCUSDT</td>
-                                        <td><span class="positive">LONG</span></td>
-                                        <td>1.5</td>
-                                        <td>$45,000</td>
-                                        <td>$46,000</td>
-                                        <td class="positive">$1,500</td>
-                                        <td class="positive">+2.04%</td>
-                                        <td>3x</td>
+                                        <td colspan="8" style="text-align: center; padding: 20px; color: #999;">No open positions</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -617,23 +614,24 @@
                     </div>
 
                     <div class="card">
-                        <h2>Position Distribution</h2>
+                        <h2>🥧 Position Distribution</h2>
                         <div class="chart-container">
                             <canvas id="position-distribution-chart"></canvas>
                         </div>
                     </div>
                 </div>
 
+                <!-- Charts -->
                 <div class="grid-2">
                     <div class="card">
-                        <h2>Real-time P&L</h2>
+                        <h2>📈 Real-time P&L</h2>
                         <div class="chart-container">
                             <canvas id="realtime-pnl-chart"></canvas>
                         </div>
                     </div>
 
                     <div class="card">
-                        <h2>Trading Activity</h2>
+                        <h2>📊 Trading Activity</h2>
                         <div class="chart-container">
                             <canvas id="trading-activity-chart"></canvas>
                         </div>

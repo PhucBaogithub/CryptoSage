@@ -33,6 +33,18 @@ app.add_middleware(
 )
 
 # ============================================================================
+# Global State for Trading
+# ============================================================================
+
+trading_state = {
+    "is_trading": False,
+    "mode": None,
+    "positions": [],
+    "trades": [],
+    "start_time": None
+}
+
+# ============================================================================
 # Pydantic Models
 # ============================================================================
 
@@ -362,10 +374,27 @@ async def get_position_sizing(
 @app.post("/api/trading/start")
 async def start_trading(mode: str = "paper"):
     """Start trading."""
+    global trading_state
+
+    if trading_state["is_trading"]:
+        return {
+            "status": "already_running",
+            "mode": trading_state["mode"],
+            "message": "Trading is already running",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    trading_state["is_trading"] = True
+    trading_state["mode"] = mode
+    trading_state["start_time"] = datetime.utcnow().isoformat()
+    trading_state["positions"] = []
+    trading_state["trades"] = []
+
     logger.info(f"Trading started in {mode} mode")
     return {
         "status": "started",
         "mode": mode,
+        "message": f"Trading started in {mode.upper()} mode",
         "timestamp": datetime.utcnow().isoformat()
     }
 
@@ -373,9 +402,37 @@ async def start_trading(mode: str = "paper"):
 @app.post("/api/trading/stop")
 async def stop_trading():
     """Stop trading."""
-    logger.info("Trading stopped")
+    global trading_state
+
+    if not trading_state["is_trading"]:
+        return {
+            "status": "already_stopped",
+            "message": "Trading is not running",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    trading_state["is_trading"] = False
+    mode = trading_state["mode"]
+
+    logger.info(f"Trading stopped (was in {mode} mode)")
     return {
         "status": "stopped",
+        "mode": mode,
+        "message": "Trading stopped successfully",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+@app.get("/api/trading/status")
+async def get_trading_status():
+    """Get current trading status."""
+    global trading_state
+    return {
+        "is_trading": trading_state["is_trading"],
+        "mode": trading_state["mode"],
+        "start_time": trading_state["start_time"],
+        "positions_count": len(trading_state["positions"]),
+        "trades_count": len(trading_state["trades"]),
         "timestamp": datetime.utcnow().isoformat()
     }
 
@@ -383,6 +440,8 @@ async def stop_trading():
 @app.post("/api/trading/place-order")
 async def place_order(request: TradeRequest):
     """Place a trade order with real Binance prices."""
+    global trading_state
+
     try:
         # Fetch real price from Binance
         async with aiohttp.ClientSession() as session:
@@ -403,6 +462,25 @@ async def place_order(request: TradeRequest):
             liquidation_price = entry_price * (1 - 1 / request.leverage)
         else:  # short
             liquidation_price = entry_price * (1 + 1 / request.leverage)
+
+        # Create position object
+        position = {
+            "order_id": order_id,
+            "symbol": request.symbol,
+            "side": request.side,
+            "size": request.size,
+            "entry_price": round(entry_price, 2),
+            "current_price": round(entry_price, 2),
+            "leverage": request.leverage,
+            "liquidation_price": round(liquidation_price, 2),
+            "pnl": 0,
+            "pnl_pct": 0,
+            "entry_time": datetime.utcnow().isoformat(),
+            "mode": request.mode
+        }
+
+        # Add to trading state positions
+        trading_state["positions"].append(position)
 
         logger.info(f"Order placed: {request.side} {request.size} {request.symbol} @ {entry_price}")
 
@@ -429,15 +507,15 @@ async def place_order(request: TradeRequest):
 
 @app.get("/api/trading/positions")
 async def get_positions():
-    """Get current positions with real Binance prices."""
-    try:
-        # For demo, return sample positions with real prices
-        positions = []
+    """Get current positions with real Binance prices and live P&L calculations."""
+    global trading_state
 
-        # Fetch real prices for demo symbols
-        symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT"]
+    try:
+        # Get unique symbols from positions
+        symbols = list(set([pos["symbol"] for pos in trading_state["positions"]]))
         prices = {}
 
+        # Fetch real prices from Binance
         async with aiohttp.ClientSession() as session:
             for symbol in symbols:
                 try:
@@ -447,30 +525,36 @@ async def get_positions():
                             data = await resp.json()
                             prices[symbol] = float(data['price'])
                 except:
-                    prices[symbol] = 45000  # Fallback
+                    prices[symbol] = None
 
-        # Return sample positions with real current prices
-        if prices.get("BTCUSDT"):
-            btc_price = prices["BTCUSDT"]
-            entry_price = btc_price * 0.98  # Entry was 2% lower
-            pnl = (btc_price - entry_price) * 1.5
-            pnl_pct = ((btc_price - entry_price) / entry_price) * 100
+        # Update positions with current prices and calculate P&L
+        updated_positions = []
+        for pos in trading_state["positions"]:
+            current_price = prices.get(pos["symbol"], pos["entry_price"])
 
-            positions.append({
-                "symbol": "BTCUSDT",
-                "side": "long",
-                "size": 1.5,
-                "entry_price": round(entry_price, 2),
-                "current_price": round(btc_price, 2),
-                "pnl": round(pnl, 2),
-                "pnl_pct": round(pnl_pct, 2),
-                "leverage": 3.0,
-                "liquidation_price": round(entry_price * (1 - 1/3.0), 2)
-            })
+            if current_price is None:
+                current_price = pos["entry_price"]
+
+            # Calculate P&L based on side
+            if pos["side"] == "long":
+                pnl = (current_price - pos["entry_price"]) * pos["size"]
+                pnl_pct = ((current_price - pos["entry_price"]) / pos["entry_price"]) * 100
+            else:  # short
+                pnl = (pos["entry_price"] - current_price) * pos["size"]
+                pnl_pct = ((pos["entry_price"] - current_price) / pos["entry_price"]) * 100
+
+            updated_pos = pos.copy()
+            updated_pos["current_price"] = round(current_price, 2)
+            updated_pos["pnl"] = round(pnl, 2)
+            updated_pos["pnl_pct"] = round(pnl_pct, 2)
+
+            updated_positions.append(updated_pos)
 
         return {
-            "positions": positions,
-            "total_positions": len(positions),
+            "positions": updated_positions,
+            "total_positions": len(updated_positions),
+            "is_trading": trading_state["is_trading"],
+            "mode": trading_state["mode"],
             "timestamp": datetime.utcnow().isoformat()
         }
     except Exception as e:
@@ -478,6 +562,8 @@ async def get_positions():
         return {
             "positions": [],
             "total_positions": 0,
+            "is_trading": trading_state["is_trading"],
+            "mode": trading_state["mode"],
             "error": str(e),
             "timestamp": datetime.utcnow().isoformat()
         }

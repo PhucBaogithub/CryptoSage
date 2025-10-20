@@ -603,7 +603,7 @@ async function startTrading() {
 
         const result = await apiCall(`/trading/start?mode=${mode}`, 'POST');
 
-        if (result && result.status === 'started') {
+        if (result && (result.status === 'started' || result.status === 'already_running')) {
             const modeLabel = mode === 'paper' ? 'Paper Trading' :
                             mode === 'testnet' ? 'Testnet' : 'Live Trading';
             showNotification(
@@ -615,9 +615,21 @@ async function startTrading() {
 
             // Update UI to show trading is active
             const startBtn = document.querySelector('button[onclick="startTrading()"]');
+            const stopBtn = document.querySelector('button[onclick="stopTrading()"]');
             if (startBtn) {
                 startBtn.disabled = true;
                 startBtn.style.opacity = '0.5';
+            }
+            if (stopBtn) {
+                stopBtn.disabled = false;
+                stopBtn.style.opacity = '1';
+            }
+
+            // Update trading status
+            const statusEl = document.getElementById('trading-status');
+            if (statusEl) {
+                statusEl.textContent = `Running (${modeLabel})`;
+                statusEl.style.color = '#27ae60';
             }
 
             // Load positions after starting
@@ -639,7 +651,7 @@ async function stopTrading() {
 
         const result = await apiCall('/trading/stop', 'POST');
 
-        if (result && result.status === 'stopped') {
+        if (result && (result.status === 'stopped' || result.status === 'already_stopped')) {
             showNotification(
                 `✓ Trading stopped successfully!\n` +
                 `Timestamp: ${new Date().toLocaleTimeString()}`,
@@ -648,9 +660,21 @@ async function stopTrading() {
 
             // Update UI to show trading is inactive
             const startBtn = document.querySelector('button[onclick="startTrading()"]');
+            const stopBtn = document.querySelector('button[onclick="stopTrading()"]');
             if (startBtn) {
                 startBtn.disabled = false;
                 startBtn.style.opacity = '1';
+            }
+            if (stopBtn) {
+                stopBtn.disabled = true;
+                stopBtn.style.opacity = '0.5';
+            }
+
+            // Update trading status
+            const statusEl = document.getElementById('trading-status');
+            if (statusEl) {
+                statusEl.textContent = 'Stopped';
+                statusEl.style.color = '#e74c3c';
             }
         } else {
             showNotification('Failed to stop trading - no response from server', 'error');
@@ -742,6 +766,25 @@ async function loadTradingPositions() {
                     posCountEl.textContent = result.total_positions;
                 }
             }
+
+            // Update trading status
+            if (result.is_trading !== undefined) {
+                const statusEl = document.getElementById('trading-status');
+                if (statusEl) {
+                    if (result.is_trading) {
+                        const modeLabel = result.mode === 'paper' ? 'Paper Trading' :
+                                        result.mode === 'testnet' ? 'Testnet' : 'Live Trading';
+                        statusEl.textContent = `Running (${modeLabel})`;
+                        statusEl.style.color = '#27ae60';
+                    } else {
+                        statusEl.textContent = 'Stopped';
+                        statusEl.style.color = '#e74c3c';
+                    }
+                }
+            }
+
+            // Update charts with position data
+            updateTradingCharts(result.positions);
         } else {
             console.warn('No positions data in response:', result);
         }
@@ -1261,16 +1304,47 @@ function initializeTrainingHistoryChart() {
     });
 }
 
+function updateTradingCharts(positions) {
+    // Update position distribution chart
+    if (positions && positions.length > 0) {
+        const symbols = positions.map(p => p.symbol.replace('USDT', ''));
+        const sizes = positions.map(p => p.size);
+
+        if (positionDistributionChart) {
+            positionDistributionChart.data.labels = symbols;
+            positionDistributionChart.data.datasets[0].data = sizes;
+            positionDistributionChart.update();
+        }
+
+        // Update real-time P&L chart
+        if (realtimePnlChart) {
+            const pnlValues = positions.map(p => p.pnl);
+            const now = new Date();
+            const timeLabel = now.toLocaleTimeString();
+
+            // Keep last 60 data points
+            if (realtimePnlChart.data.labels.length >= 60) {
+                realtimePnlChart.data.labels.shift();
+                realtimePnlChart.data.datasets[0].data.shift();
+            }
+
+            realtimePnlChart.data.labels.push(timeLabel);
+            realtimePnlChart.data.datasets[0].data.push(pnlValues.reduce((a, b) => a + b, 0));
+            realtimePnlChart.update();
+        }
+    }
+}
+
 function initializePositionDistributionChart() {
     const ctx = document.getElementById('position-distribution-chart');
     if (!ctx) return;
     positionDistributionChart = new Chart(ctx.getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: ['BTC', 'ETH', 'BNB', 'SOL', 'XRP'],
+            labels: ['No Positions'],
             datasets: [{
-                data: [40, 25, 20, 10, 5],
-                backgroundColor: ['#f7931a', '#627eea', '#f3ba2f', '#14f195', '#23292f'],
+                data: [1],
+                backgroundColor: ['#ecf0f1'],
                 borderColor: '#ffffff',
                 borderWidth: 2
             }]
@@ -1278,7 +1352,10 @@ function initializePositionDistributionChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: { enabled: true }
+            }
         }
     });
 }
