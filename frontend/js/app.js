@@ -354,7 +354,7 @@ function updateTradesTable(trades) {
 
 async function startTrading() {
     const mode = document.getElementById('trading-mode').value;
-    const result = await apiCall(`/api/trading/start?mode=${mode}`, 'POST');
+    const result = await apiCall(`/trading/start?mode=${mode}`, 'POST');
     if (result) {
         showNotification(`Trading started in ${mode} mode`, 'success');
     }
