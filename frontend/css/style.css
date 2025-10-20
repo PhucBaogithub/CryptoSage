@@ -483,3 +483,103 @@ canvas {
     }
 }
 
+/* ============================================================================
+   Badges and Tags
+   ============================================================================ */
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge.up {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.badge.down {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.badge.buy {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.badge.sell {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.badge.hold {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* ============================================================================
+   Form Elements
+   ============================================================================ */
+
+select {
+    width: 100%;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--primary-bg);
+    color: var(--primary-text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+select:hover {
+    border-color: var(--accent-color);
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* ============================================================================
+   Data Table
+   ============================================================================ */
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.data-table thead {
+    background-color: var(--secondary-bg);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.data-table th {
+    padding: var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary-text);
+}
+
+.data-table td {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table tbody tr:hover {
+    background-color: var(--secondary-bg);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+

@@ -24,6 +24,7 @@
         <!-- Navigation -->
         <nav class="nav">
             <button class="nav-btn active" data-tab="overview">Overview</button>
+            <button class="nav-btn" data-tab="predictions">Predictions</button>
             <button class="nav-btn" data-tab="data">Data</button>
             <button class="nav-btn" data-tab="models">Models</button>
             <button class="nav-btn" data-tab="backtest">Backtest</button>
@@ -598,6 +599,130 @@
                         <div class="chart-container">
                             <canvas id="trading-activity-chart"></canvas>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Predictions Tab -->
+            <section id="predictions" class="tab-content">
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Select Cryptocurrency</h2>
+                        <div class="form-group">
+                            <label>Choose Coin</label>
+                            <select id="prediction-symbol" onchange="updatePredictions()">
+                                <option value="BTCUSDT">Bitcoin (BTC)</option>
+                                <option value="ETHUSDT">Ethereum (ETH)</option>
+                                <option value="BNBUSDT">Binance Coin (BNB)</option>
+                                <option value="ADAUSDT">Cardano (ADA)</option>
+                                <option value="XRPUSDT">Ripple (XRP)</option>
+                                <option value="DOGEUSDT">Dogecoin (DOGE)</option>
+                                <option value="SOLUSDT">Solana (SOL)</option>
+                                <option value="MATICUSDT">Polygon (MATIC)</option>
+                                <option value="LINKUSDT">Chainlink (LINK)</option>
+                                <option value="LTCUSDT">Litecoin (LTC)</option>
+                                <option value="AVAXUSDT">Avalanche (AVAX)</option>
+                                <option value="UNIUSDT">Uniswap (UNI)</option>
+                            </select>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Current Price</span>
+                            <span class="value" id="pred-current-price">$46,000</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Last Updated</span>
+                            <span class="value" id="pred-last-updated">Just now</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Prediction Summary</h2>
+                        <div class="metric">
+                            <span class="label">Long-term Trend (12M)</span>
+                            <span class="value" id="pred-long-trend">Bullish</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Long-term Confidence</span>
+                            <span class="value" id="pred-long-confidence">65%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Short-term Trend (1D)</span>
+                            <span class="value" id="pred-short-trend">Bullish</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Short-term Confidence</span>
+                            <span class="value" id="pred-short-confidence">70%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-1">
+                    <div class="card">
+                        <h2>Long-term Price Predictions (3-36 Months)</h2>
+                        <div class="chart-container">
+                            <canvas id="long-term-predictions-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-1">
+                    <div class="card">
+                        <h2>Long-term Predictions Table</h2>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timeframe</th>
+                                    <th>Predicted Price</th>
+                                    <th>Price Change</th>
+                                    <th>Confidence</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody id="long-term-predictions-table">
+                                <tr>
+                                    <td>3 Months</td>
+                                    <td>$47,500</td>
+                                    <td>+3.26%</td>
+                                    <td>65%</td>
+                                    <td><span class="badge up">UP</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid-1">
+                    <div class="card">
+                        <h2>Short-term Price Predictions (1H - 3D)</h2>
+                        <div class="chart-container">
+                            <canvas id="short-term-predictions-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-1">
+                    <div class="card">
+                        <h2>Short-term Predictions Table</h2>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timeframe</th>
+                                    <th>Predicted Price</th>
+                                    <th>Price Change</th>
+                                    <th>Confidence</th>
+                                    <th>Signal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="short-term-predictions-table">
+                                <tr>
+                                    <td>1 Hour</td>
+                                    <td>$46,100</td>
+                                    <td>+0.22%</td>
+                                    <td>70%</td>
+                                    <td><span class="badge buy">BUY</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>

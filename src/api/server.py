@@ -432,6 +432,137 @@ async def get_account_info():
 
 
 # ============================================================================
+# Price Prediction Endpoints
+# ============================================================================
+
+@app.get("/api/predictions/long-term")
+async def get_long_term_predictions(symbol: str = "BTCUSDT"):
+    """Get long-term price predictions (3-36 months)."""
+    import random
+    from datetime import timedelta
+
+    # Generate mock predictions for different timeframes
+    current_price = 46000
+    timeframes = [3, 6, 9, 12, 24, 36]  # months
+    predictions = []
+
+    for months in timeframes:
+        # Simulate price prediction with some randomness
+        price_change_pct = random.uniform(-0.3, 0.5)  # -30% to +50%
+        predicted_price = current_price * (1 + price_change_pct)
+        confidence = random.uniform(0.55, 0.75)
+
+        predictions.append({
+            "timeframe_months": months,
+            "predicted_price": round(predicted_price, 2),
+            "price_change_pct": round(price_change_pct * 100, 2),
+            "confidence": round(confidence, 3),
+            "trend": "up" if price_change_pct > 0 else "down"
+        })
+
+    return {
+        "symbol": symbol,
+        "current_price": current_price,
+        "timestamp": datetime.utcnow().isoformat(),
+        "predictions": predictions
+    }
+
+
+@app.get("/api/predictions/short-term")
+async def get_short_term_predictions(symbol: str = "BTCUSDT"):
+    """Get short-term price predictions (hours to days)."""
+    import random
+    from datetime import timedelta
+
+    # Generate mock predictions for different timeframes
+    current_price = 46000
+    timeframes = [
+        {"hours": 1, "label": "1H"},
+        {"hours": 4, "label": "4H"},
+        {"hours": 12, "label": "12H"},
+        {"hours": 24, "label": "1D"},
+        {"hours": 48, "label": "2D"},
+        {"hours": 72, "label": "3D"}
+    ]
+    predictions = []
+
+    for tf in timeframes:
+        # Simulate price prediction with some randomness
+        price_change_pct = random.uniform(-0.1, 0.1)  # -10% to +10%
+        predicted_price = current_price * (1 + price_change_pct)
+        confidence = random.uniform(0.60, 0.80)
+
+        predictions.append({
+            "timeframe": tf["label"],
+            "hours": tf["hours"],
+            "predicted_price": round(predicted_price, 2),
+            "price_change_pct": round(price_change_pct * 100, 2),
+            "confidence": round(confidence, 3),
+            "signal": "buy" if price_change_pct > 0.02 else ("sell" if price_change_pct < -0.02 else "hold")
+        })
+
+    return {
+        "symbol": symbol,
+        "current_price": current_price,
+        "timestamp": datetime.utcnow().isoformat(),
+        "predictions": predictions
+    }
+
+
+@app.get("/api/predictions/chart-data/long-term")
+async def get_long_term_chart_data(symbol: str = "BTCUSDT"):
+    """Get chart data for long-term predictions."""
+    import random
+    from datetime import timedelta
+
+    current_price = 46000
+    months = [0, 3, 6, 9, 12, 24, 36]
+    prices = [current_price]
+
+    for i in range(1, len(months)):
+        # Simulate price movement
+        change = random.uniform(-0.05, 0.08)
+        new_price = prices[-1] * (1 + change)
+        prices.append(round(new_price, 2))
+
+    labels = ["Now"] + [f"{m}M" for m in months[1:]]
+
+    return {
+        "symbol": symbol,
+        "labels": labels,
+        "prices": prices,
+        "confidence_upper": [p * 1.15 for p in prices],
+        "confidence_lower": [p * 0.85 for p in prices]
+    }
+
+
+@app.get("/api/predictions/chart-data/short-term")
+async def get_short_term_chart_data(symbol: str = "BTCUSDT"):
+    """Get chart data for short-term predictions."""
+    import random
+
+    current_price = 46000
+    hours = 72  # 3 days
+    prices = [current_price]
+
+    for i in range(hours):
+        # Simulate hourly price movement
+        change = random.uniform(-0.005, 0.005)
+        new_price = prices[-1] * (1 + change)
+        prices.append(round(new_price, 2))
+
+    labels = [f"{i}H" for i in range(hours + 1)]
+
+    return {
+        "symbol": symbol,
+        "labels": labels,
+        "prices": prices,
+        "confidence_upper": [p * 1.05 for p in prices],
+        "confidence_lower": [p * 0.95 for p in prices]
+    }
+
+
+# ============================================================================
 # WebSocket Endpoints
 # ============================================================================
 

@@ -23,6 +23,8 @@ let tradingActivityChart = null;
 let riskGaugeChart = null;
 let liquidationRiskChart = null;
 let fundingCostChart = null;
+let longTermPredictionsChart = null;
+let shortTermPredictionsChart = null;
 
 // Chart colors
 const chartColors = {
@@ -247,6 +249,13 @@ async function loadInitialData() {
         }
     } catch (error) {
         console.error('Error loading predictions:', error);
+    }
+
+    // Load price predictions
+    try {
+        await updatePredictions();
+    } catch (error) {
+        console.error('Error loading price predictions:', error);
     }
 }
 
@@ -1011,6 +1020,261 @@ function connectWebSocket() {
     } catch (error) {
         console.warn('WebSocket connection failed (non-critical):', error);
     }
+}
+
+// ============================================================================
+// Price Predictions
+// ============================================================================
+
+async function updatePredictions() {
+    try {
+        const symbol = document.getElementById('prediction-symbol').value;
+
+        // Load long-term predictions
+        const ltResponse = await apiCall(`/predictions/long-term?symbol=${symbol}`);
+        if (ltResponse && ltResponse.predictions) {
+            updateLongTermPredictions(ltResponse);
+        }
+
+        // Load short-term predictions
+        const stResponse = await apiCall(`/predictions/short-term?symbol=${symbol}`);
+        if (stResponse && stResponse.predictions) {
+            updateShortTermPredictions(stResponse);
+        }
+
+        // Load chart data
+        const ltChartData = await apiCall(`/predictions/chart-data/long-term?symbol=${symbol}`);
+        if (ltChartData) {
+            initializeLongTermPredictionsChart(ltChartData);
+        }
+
+        const stChartData = await apiCall(`/predictions/chart-data/short-term?symbol=${symbol}`);
+        if (stChartData) {
+            initializeShortTermPredictionsChart(stChartData);
+        }
+    } catch (error) {
+        console.error('Error updating predictions:', error);
+    }
+}
+
+function updateLongTermPredictions(data) {
+    try {
+        // Update current price
+        const priceEl = document.getElementById('pred-current-price');
+        if (priceEl) {
+            priceEl.textContent = `$${data.current_price.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        }
+
+        // Update last updated time
+        const timeEl = document.getElementById('pred-last-updated');
+        if (timeEl) {
+            timeEl.textContent = 'Just now';
+        }
+
+        // Update summary
+        if (data.predictions && data.predictions.length > 0) {
+            const pred12m = data.predictions.find(p => p.timeframe_months === 12);
+            if (pred12m) {
+                const trendEl = document.getElementById('pred-long-trend');
+                const confEl = document.getElementById('pred-long-confidence');
+                if (trendEl) trendEl.textContent = pred12m.trend.toUpperCase();
+                if (confEl) confEl.textContent = `${(pred12m.confidence * 100).toFixed(0)}%`;
+            }
+        }
+
+        // Update table
+        const tableBody = document.getElementById('long-term-predictions-table');
+        if (tableBody && data.predictions) {
+            tableBody.innerHTML = data.predictions.map(pred => `
+                <tr>
+                    <td>${pred.timeframe_months} Months</td>
+                    <td>$${pred.predicted_price.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="${pred.price_change_pct >= 0 ? 'positive' : 'negative'}">
+                        ${pred.price_change_pct >= 0 ? '+' : ''}${pred.price_change_pct.toFixed(2)}%
+                    </td>
+                    <td>${(pred.confidence * 100).toFixed(0)}%</td>
+                    <td><span class="badge ${pred.trend === 'up' ? 'up' : 'down'}">${pred.trend.toUpperCase()}</span></td>
+                </tr>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error updating long-term predictions:', error);
+    }
+}
+
+function updateShortTermPredictions(data) {
+    try {
+        // Update summary
+        if (data.predictions && data.predictions.length > 0) {
+            const pred1d = data.predictions.find(p => p.timeframe === '1D');
+            if (pred1d) {
+                const trendEl = document.getElementById('pred-short-trend');
+                const confEl = document.getElementById('pred-short-confidence');
+                if (trendEl) trendEl.textContent = pred1d.signal.toUpperCase();
+                if (confEl) confEl.textContent = `${(pred1d.confidence * 100).toFixed(0)}%`;
+            }
+        }
+
+        // Update table
+        const tableBody = document.getElementById('short-term-predictions-table');
+        if (tableBody && data.predictions) {
+            tableBody.innerHTML = data.predictions.map(pred => `
+                <tr>
+                    <td>${pred.timeframe}</td>
+                    <td>$${pred.predicted_price.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="${pred.price_change_pct >= 0 ? 'positive' : 'negative'}">
+                        ${pred.price_change_pct >= 0 ? '+' : ''}${pred.price_change_pct.toFixed(2)}%
+                    </td>
+                    <td>${(pred.confidence * 100).toFixed(0)}%</td>
+                    <td><span class="badge ${pred.signal === 'buy' ? 'buy' : (pred.signal === 'sell' ? 'sell' : 'hold')}">${pred.signal.toUpperCase()}</span></td>
+                </tr>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Error updating short-term predictions:', error);
+    }
+}
+
+function initializeLongTermPredictionsChart(data) {
+    const ctx = document.getElementById('long-term-predictions-chart');
+    if (!ctx) return;
+
+    if (longTermPredictionsChart) {
+        longTermPredictionsChart.destroy();
+    }
+
+    longTermPredictionsChart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [
+                {
+                    label: 'Predicted Price',
+                    data: data.prices,
+                    borderColor: chartColors.primary,
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: chartColors.primary,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                },
+                {
+                    label: 'Upper Confidence',
+                    data: data.confidence_upper,
+                    borderColor: 'rgba(52, 152, 219, 0.3)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Lower Confidence',
+                    data: data.confidence_lower,
+                    borderColor: 'rgba(52, 152, 219, 0.3)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { color: '#666666', font: { size: 12 } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: { color: '#e0e0e0' },
+                    ticks: { color: '#666666' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#666666' }
+                }
+            }
+        }
+    });
+}
+
+function initializeShortTermPredictionsChart(data) {
+    const ctx = document.getElementById('short-term-predictions-chart');
+    if (!ctx) return;
+
+    if (shortTermPredictionsChart) {
+        shortTermPredictionsChart.destroy();
+    }
+
+    shortTermPredictionsChart = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [
+                {
+                    label: 'Predicted Price',
+                    data: data.prices,
+                    borderColor: chartColors.success,
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: chartColors.success,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1
+                },
+                {
+                    label: 'Upper Confidence',
+                    data: data.confidence_upper,
+                    borderColor: 'rgba(39, 174, 96, 0.3)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Lower Confidence',
+                    data: data.confidence_lower,
+                    borderColor: 'rgba(39, 174, 96, 0.3)',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: { color: '#666666', font: { size: 12 } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: { color: '#e0e0e0' },
+                    ticks: { color: '#666666' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#666666' }
+                }
+            }
+        }
+    });
 }
 
 // ============================================================================
