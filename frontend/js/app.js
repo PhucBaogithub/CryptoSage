@@ -50,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeApp() {
     console.log('Initializing Bitcoin Futures Trading Dashboard');
-    updateSystemStatus();
+    // Call updateSystemStatus after a short delay to ensure DOM is ready
+    setTimeout(updateSystemStatus, 100);
 }
 
 function setupEventListeners() {
