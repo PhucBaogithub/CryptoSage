@@ -578,18 +578,40 @@ async function startTrading() {
             return;
         }
 
-        showNotification(`Starting trading in ${mode} mode...`, 'info');
+        // Validate mode
+        const validModes = ['paper', 'testnet', 'live'];
+        if (!validModes.includes(mode)) {
+            showNotification('Invalid trading mode selected', 'error');
+            return;
+        }
+
+        showNotification(`Starting trading in ${mode.toUpperCase()} mode...`, 'info');
 
         const result = await apiCall(`/trading/start?mode=${mode}`, 'POST');
 
         if (result && result.status === 'started') {
-            showNotification(`Trading started in ${mode} mode`, 'success');
+            const modeLabel = mode === 'paper' ? 'Paper Trading' :
+                            mode === 'testnet' ? 'Testnet' : 'Live Trading';
+            showNotification(
+                `✓ Trading started successfully!\n` +
+                `Mode: ${modeLabel}\n` +
+                `Timestamp: ${new Date().toLocaleTimeString()}`,
+                'success'
+            );
+
+            // Update UI to show trading is active
+            const startBtn = document.querySelector('button[onclick="startTrading()"]');
+            if (startBtn) {
+                startBtn.disabled = true;
+                startBtn.style.opacity = '0.5';
+            }
+
             // Load positions after starting
             setTimeout(() => {
                 loadTradingPositions();
-            }, 1000);
+            }, 500);
         } else {
-            showNotification('Failed to start trading', 'error');
+            showNotification('Failed to start trading - no response from server', 'error');
         }
     } catch (error) {
         console.error('Error in startTrading:', error);
@@ -604,9 +626,20 @@ async function stopTrading() {
         const result = await apiCall('/trading/stop', 'POST');
 
         if (result && result.status === 'stopped') {
-            showNotification('Trading stopped successfully', 'success');
+            showNotification(
+                `✓ Trading stopped successfully!\n` +
+                `Timestamp: ${new Date().toLocaleTimeString()}`,
+                'success'
+            );
+
+            // Update UI to show trading is inactive
+            const startBtn = document.querySelector('button[onclick="startTrading()"]');
+            if (startBtn) {
+                startBtn.disabled = false;
+                startBtn.style.opacity = '1';
+            }
         } else {
-            showNotification('Failed to stop trading', 'error');
+            showNotification('Failed to stop trading - no response from server', 'error');
         }
     } catch (error) {
         console.error('Error in stopTrading:', error);
@@ -622,7 +655,7 @@ async function placeOrder() {
         const leverage = parseFloat(document.getElementById('order-leverage').value);
         const mode = document.getElementById('trading-mode').value;
 
-        // Validation
+        // Comprehensive validation
         if (!symbol) {
             showNotification('Please select a symbol', 'error');
             return;
@@ -632,15 +665,15 @@ async function placeOrder() {
             return;
         }
         if (isNaN(size) || size <= 0) {
-            showNotification('Please enter a valid size', 'error');
+            showNotification('Please enter a valid size (> 0)', 'error');
             return;
         }
-        if (isNaN(leverage) || leverage <= 0) {
-            showNotification('Please enter a valid leverage', 'error');
+        if (isNaN(leverage) || leverage < 1 || leverage > 125) {
+            showNotification('Please enter a valid leverage (1-125x)', 'error');
             return;
         }
 
-        showNotification(`Placing ${side} order for ${size} ${symbol}...`, 'info');
+        showNotification(`Placing ${side} order for ${size} ${symbol} @ ${leverage}x leverage...`, 'info');
 
         const result = await apiCall('/trading/place-order', 'POST', {
             symbol,
@@ -650,14 +683,31 @@ async function placeOrder() {
             mode
         });
 
-        if (result && result.status) {
-            showNotification(`Order placed: ${side} ${size} ${symbol} @ ${leverage}x leverage`, 'success');
-            // Reload positions
+        if (result && result.status === 'success') {
+            const entryPrice = result.entry_price || 'N/A';
+            const liquidationPrice = result.liquidation_price || 'N/A';
+            const orderId = result.order_id || 'N/A';
+
+            showNotification(
+                `✓ Order placed successfully!\n` +
+                `Order ID: ${orderId}\n` +
+                `Entry Price: $${entryPrice}\n` +
+                `Liquidation: $${liquidationPrice}`,
+                'success'
+            );
+
+            // Clear form
+            document.getElementById('order-size').value = '1.0';
+            document.getElementById('order-leverage').value = '1.0';
+
+            // Reload positions after a short delay
             setTimeout(() => {
                 loadTradingPositions();
-            }, 1000);
+            }, 500);
+        } else if (result && result.status === 'error') {
+            showNotification(`Order failed: ${result.message}`, 'error');
         } else {
-            showNotification('Failed to place order', 'error');
+            showNotification('Failed to place order - no response from server', 'error');
         }
     } catch (error) {
         console.error('Error in placeOrder:', error);
@@ -668,8 +718,18 @@ async function placeOrder() {
 async function loadTradingPositions() {
     try {
         const result = await apiCall('/trading/positions');
-        if (result && result.positions) {
+        if (result && result.positions !== undefined) {
             updatePositionsTable(result.positions);
+
+            // Update account info if available
+            if (result.total_positions !== undefined) {
+                const posCountEl = document.getElementById('total-positions');
+                if (posCountEl) {
+                    posCountEl.textContent = result.total_positions;
+                }
+            }
+        } else {
+            console.warn('No positions data in response:', result);
         }
     } catch (error) {
         console.error('Error loading trading positions:', error);
@@ -681,20 +741,28 @@ function updatePositionsTable(positions) {
     if (!tbody) return;
 
     if (!positions || positions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No open positions</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999; padding: 20px;">No open positions</td></tr>';
         return;
     }
 
-    tbody.innerHTML = positions.map(pos => `
-        <tr>
-            <td>${pos.symbol}</td>
-            <td>${pos.side}</td>
-            <td>${pos.size}</td>
-            <td>$${pos.entry_price.toLocaleString()}</td>
-            <td>$${pos.current_price.toLocaleString()}</td>
-            <td class="${pos.pnl >= 0 ? 'positive' : 'negative'}">$${pos.pnl.toLocaleString()}</td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = positions.map(pos => {
+        const pnlClass = pos.pnl >= 0 ? 'positive' : 'negative';
+        const pnlSign = pos.pnl >= 0 ? '+' : '';
+        const sideClass = pos.side === 'long' ? 'positive' : 'negative';
+
+        return `
+            <tr>
+                <td><strong>${pos.symbol}</strong></td>
+                <td><span class="${sideClass}">${pos.side.toUpperCase()}</span></td>
+                <td>${pos.size}</td>
+                <td>$${typeof pos.entry_price === 'number' ? pos.entry_price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : pos.entry_price}</td>
+                <td>$${typeof pos.current_price === 'number' ? pos.current_price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : pos.current_price}</td>
+                <td><strong class="${pnlClass}">$${pnlSign}${typeof pos.pnl === 'number' ? pos.pnl.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : pos.pnl}</strong></td>
+                <td class="${pnlClass}"><strong>${pnlSign}${typeof pos.pnl_pct === 'number' ? pos.pnl_pct.toFixed(2) : pos.pnl_pct}%</strong></td>
+                <td>${pos.leverage}x</td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // ============================================================================

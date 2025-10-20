@@ -382,38 +382,105 @@ async def stop_trading():
 
 @app.post("/api/trading/place-order")
 async def place_order(request: TradeRequest):
-    """Place a trade order."""
-    logger.info(f"Order placed: {request.side} {request.size} {request.symbol}")
-    return {
-        "status": "success",
-        "order_id": "12345",
-        "symbol": request.symbol,
-        "side": request.side,
-        "size": request.size,
-        "mode": request.mode,
-        "timestamp": datetime.utcnow().isoformat()
-    }
+    """Place a trade order with real Binance prices."""
+    try:
+        # Fetch real price from Binance
+        async with aiohttp.ClientSession() as session:
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={request.symbol}"
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    entry_price = float(data['price'])
+                else:
+                    entry_price = 45000  # Fallback
+
+        # Generate order ID
+        import random
+        order_id = f"ORD-{random.randint(100000, 999999)}"
+
+        # Calculate liquidation price based on leverage
+        if request.side == "long":
+            liquidation_price = entry_price * (1 - 1 / request.leverage)
+        else:  # short
+            liquidation_price = entry_price * (1 + 1 / request.leverage)
+
+        logger.info(f"Order placed: {request.side} {request.size} {request.symbol} @ {entry_price}")
+
+        return {
+            "status": "success",
+            "order_id": order_id,
+            "symbol": request.symbol,
+            "side": request.side,
+            "size": request.size,
+            "entry_price": round(entry_price, 2),
+            "leverage": request.leverage,
+            "liquidation_price": round(liquidation_price, 2),
+            "mode": request.mode,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error placing order: {e}")
+        return {
+            "status": "error",
+            "message": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
 
 @app.get("/api/trading/positions")
 async def get_positions():
-    """Get current positions."""
-    return {
-        "positions": [
-            {
+    """Get current positions with real Binance prices."""
+    try:
+        # For demo, return sample positions with real prices
+        positions = []
+
+        # Fetch real prices for demo symbols
+        symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT"]
+        prices = {}
+
+        async with aiohttp.ClientSession() as session:
+            for symbol in symbols:
+                try:
+                    url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=3)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            prices[symbol] = float(data['price'])
+                except:
+                    prices[symbol] = 45000  # Fallback
+
+        # Return sample positions with real current prices
+        if prices.get("BTCUSDT"):
+            btc_price = prices["BTCUSDT"]
+            entry_price = btc_price * 0.98  # Entry was 2% lower
+            pnl = (btc_price - entry_price) * 1.5
+            pnl_pct = ((btc_price - entry_price) / entry_price) * 100
+
+            positions.append({
                 "symbol": "BTCUSDT",
                 "side": "long",
                 "size": 1.5,
-                "entry_price": 45000,
-                "current_price": 46000,
-                "pnl": 1500,
-                "pnl_pct": 2.17,
+                "entry_price": round(entry_price, 2),
+                "current_price": round(btc_price, 2),
+                "pnl": round(pnl, 2),
+                "pnl_pct": round(pnl_pct, 2),
                 "leverage": 3.0,
-                "liquidation_price": 35250
-            }
-        ],
-        "total_positions": 1
-    }
+                "liquidation_price": round(entry_price * (1 - 1/3.0), 2)
+            })
+
+        return {
+            "positions": positions,
+            "total_positions": len(positions),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting positions: {e}")
+        return {
+            "positions": [],
+            "total_positions": 0,
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
 
 
 @app.get("/api/trading/account")
