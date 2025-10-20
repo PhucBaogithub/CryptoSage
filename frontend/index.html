@@ -79,9 +79,36 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <h2>Equity Curve</h2>
-                    <canvas id="equity-chart"></canvas>
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Equity Curve</h2>
+                        <div class="chart-container">
+                            <canvas id="equity-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Daily Returns</h2>
+                        <div class="chart-container">
+                            <canvas id="returns-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Win Rate</h2>
+                        <div class="chart-container">
+                            <canvas id="winrate-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Drawdown Analysis</h2>
+                        <div class="chart-container">
+                            <canvas id="drawdown-chart"></canvas>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -115,25 +142,66 @@
 
             <!-- Data Tab -->
             <section id="data" class="tab-content">
-                <div class="card">
-                    <h2>Data Collection</h2>
-                    <div class="form-group">
-                        <label>Symbols</label>
-                        <input type="text" id="symbols-input" placeholder="BTCUSDT, ETHUSDT" value="BTCUSDT">
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Data Collection</h2>
+                        <div class="form-group">
+                            <label>Select Symbols</label>
+                            <select id="symbols-select" multiple style="height: 150px;">
+                                <option selected>BTCUSDT</option>
+                                <option selected>ETHUSDT</option>
+                                <option>BNBUSDT</option>
+                                <option>SOLUSDT</option>
+                                <option>XRPUSDT</option>
+                                <option>ADAUSDT</option>
+                                <option>DOGEUSDT</option>
+                                <option>MATICUSDT</option>
+                                <option>LINKUSDT</option>
+                                <option>LTCUSDT</option>
+                                <option>AVAXUSDT</option>
+                                <option>UNIUSDT</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Timeframes</label>
+                            <select id="timeframes-select" multiple style="height: 100px;">
+                                <option selected>1h</option>
+                                <option selected>4h</option>
+                                <option selected>1d</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Limit</label>
+                            <input type="number" id="limit-input" value="1000">
+                        </div>
+                        <button class="btn btn-primary" onclick="collectData()">Start Collection</button>
                     </div>
-                    <div class="form-group">
-                        <label>Timeframes</label>
-                        <select id="timeframes-select" multiple>
-                            <option selected>1h</option>
-                            <option selected>4h</option>
-                            <option selected>1d</option>
-                        </select>
+
+                    <div class="card">
+                        <h2>Available Coins</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div style="padding: 10px; background: #f0f2f5; border-radius: 4px;">
+                                <strong>Major Coins</strong>
+                                <div style="font-size: 12px; margin-top: 5px;">
+                                    • Bitcoin (BTC)<br>
+                                    • Ethereum (ETH)<br>
+                                    • Binance (BNB)<br>
+                                    • Solana (SOL)<br>
+                                    • Ripple (XRP)
+                                </div>
+                            </div>
+                            <div style="padding: 10px; background: #f0f2f5; border-radius: 4px;">
+                                <strong>Alt Coins</strong>
+                                <div style="font-size: 12px; margin-top: 5px;">
+                                    • Cardano (ADA)<br>
+                                    • Dogecoin (DOGE)<br>
+                                    • Polygon (MATIC)<br>
+                                    • Chainlink (LINK)<br>
+                                    • Litecoin (LTC)
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Limit</label>
-                        <input type="number" id="limit-input" value="1000">
-                    </div>
-                    <button class="btn btn-primary" onclick="collectData()">Start Collection</button>
                 </div>
 
                 <div class="card">
@@ -152,23 +220,39 @@
                     </div>
                 </div>
 
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Feature Statistics</h2>
+                        <div class="metric">
+                            <span class="label">Total Features</span>
+                            <span class="value" id="total-features">50</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Price Features</span>
+                            <span class="value" id="price-features">5</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Technical Indicators</span>
+                            <span class="value" id="technical-features">15</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Volatility Features</span>
+                            <span class="value" id="volatility-features">12</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Data Distribution</h2>
+                        <div class="chart-container">
+                            <canvas id="data-distribution-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
-                    <h2>Feature Statistics</h2>
-                    <div class="metric">
-                        <span class="label">Total Features</span>
-                        <span class="value" id="total-features">50</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Price Features</span>
-                        <span class="value" id="price-features">5</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Technical Indicators</span>
-                        <span class="value" id="technical-features">15</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Volatility Features</span>
-                        <span class="value" id="volatility-features">12</span>
+                    <h2>Coin Price Comparison</h2>
+                    <div class="chart-container" style="height: 400px;">
+                        <canvas id="coin-comparison-chart"></canvas>
                     </div>
                 </div>
             </section>
@@ -211,38 +295,58 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <h2>Current Predictions</h2>
-                    <div class="grid-2">
-                        <div>
-                            <h3>Long-term (30-day)</h3>
-                            <div class="metric">
-                                <span class="label">Mean Return</span>
-                                <span class="value positive">+1.50%</span>
-                            </div>
-                            <div class="metric">
-                                <span class="label">Std Dev</span>
-                                <span class="value">2.50%</span>
-                            </div>
-                            <div class="metric">
-                                <span class="label">Confidence</span>
-                                <span class="value">65%</span>
-                            </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Long-term Predictions</h2>
+                        <div class="metric">
+                            <span class="label">Mean Return</span>
+                            <span class="value positive">+1.50%</span>
                         </div>
-                        <div>
-                            <h3>Short-term (1-hour)</h3>
-                            <div class="metric">
-                                <span class="label">Signal</span>
-                                <span class="value positive">UP</span>
-                            </div>
-                            <div class="metric">
-                                <span class="label">Probability</span>
-                                <span class="value">58%</span>
-                            </div>
-                            <div class="metric">
-                                <span class="label">Confidence</span>
-                                <span class="value">62%</span>
-                            </div>
+                        <div class="metric">
+                            <span class="label">Std Dev</span>
+                            <span class="value">2.50%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Confidence</span>
+                            <span class="value">65%</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="lt-predictions-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Short-term Predictions</h2>
+                        <div class="metric">
+                            <span class="label">Signal</span>
+                            <span class="value positive">UP</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Probability</span>
+                            <span class="value">58%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Confidence</span>
+                            <span class="value">62%</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="st-predictions-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Model Performance</h2>
+                        <div class="chart-container">
+                            <canvas id="model-performance-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Training History</h2>
+                        <div class="chart-container">
+                            <canvas id="training-history-chart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -250,38 +354,44 @@
 
             <!-- Backtest Tab -->
             <section id="backtest" class="tab-content">
-                <div class="card">
-                    <h2>Backtest Configuration</h2>
-                    <div class="form-group">
-                        <label>Symbol</label>
-                        <input type="text" id="backtest-symbol" value="BTCUSDT">
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Backtest Configuration</h2>
+                        <div class="form-group">
+                            <label>Symbol</label>
+                            <select id="backtest-symbol">
+                                <option selected>BTCUSDT</option>
+                                <option>ETHUSDT</option>
+                                <option>BNBUSDT</option>
+                                <option>SOLUSDT</option>
+                                <option>XRPUSDT</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Timeframe</label>
+                            <select id="backtest-timeframe">
+                                <option>1h</option>
+                                <option selected>4h</option>
+                                <option>1d</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Start Date</label>
+                            <input type="date" id="backtest-start">
+                        </div>
+                        <div class="form-group">
+                            <label>End Date</label>
+                            <input type="date" id="backtest-end">
+                        </div>
+                        <div class="form-group">
+                            <label>Initial Capital</label>
+                            <input type="number" id="backtest-capital" value="100000">
+                        </div>
+                        <button class="btn btn-primary" onclick="runBacktest()">Run Backtest</button>
                     </div>
-                    <div class="form-group">
-                        <label>Timeframe</label>
-                        <select id="backtest-timeframe">
-                            <option>1h</option>
-                            <option selected>4h</option>
-                            <option>1d</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Start Date</label>
-                        <input type="date" id="backtest-start">
-                    </div>
-                    <div class="form-group">
-                        <label>End Date</label>
-                        <input type="date" id="backtest-end">
-                    </div>
-                    <div class="form-group">
-                        <label>Initial Capital</label>
-                        <input type="number" id="backtest-capital" value="100000">
-                    </div>
-                    <button class="btn btn-primary" onclick="runBacktest()">Run Backtest</button>
-                </div>
 
-                <div class="card">
-                    <h2>Backtest Results</h2>
-                    <div class="grid-2">
+                    <div class="card">
+                        <h2>Quick Stats</h2>
                         <div class="metric">
                             <span class="label">Total Return</span>
                             <span class="value positive">+15.32%</span>
@@ -298,6 +408,12 @@
                             <span class="label">Max Drawdown</span>
                             <span class="value negative">-8.23%</span>
                         </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Performance Metrics</h2>
                         <div class="metric">
                             <span class="label">Win Rate</span>
                             <span class="value">58.33%</span>
@@ -306,12 +422,51 @@
                             <span class="label">Profit Factor</span>
                             <span class="value">1.85</span>
                         </div>
+                        <div class="metric">
+                            <span class="label">Total Trades</span>
+                            <span class="value">120</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Avg Trade</span>
+                            <span class="value positive">+$127.67</span>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Risk Metrics</h2>
+                        <div class="metric">
+                            <span class="label">Sortino Ratio</span>
+                            <span class="value">2.15</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Calmar Ratio</span>
+                            <span class="value">5.59</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Recovery Factor</span>
+                            <span class="value">1.86</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Consecutive Losses</span>
+                            <span class="value">5</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="card">
-                    <h2>Equity Curve</h2>
-                    <canvas id="backtest-equity-chart"></canvas>
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Equity Curve</h2>
+                        <div class="chart-container">
+                            <canvas id="backtest-equity-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Monthly Returns</h2>
+                        <div class="chart-container">
+                            <canvas id="monthly-returns-chart"></canvas>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -347,14 +502,18 @@
             <section id="trading" class="tab-content">
                 <div class="grid-2">
                     <div class="card">
-                        <h2>Trading Mode</h2>
+                        <h2>Trading Control</h2>
                         <div class="form-group">
-                            <label>Mode</label>
+                            <label>Trading Mode</label>
                             <select id="trading-mode">
                                 <option selected>paper</option>
                                 <option>testnet</option>
                                 <option>live</option>
                             </select>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Status</span>
+                            <span class="value" id="trading-status">Stopped</span>
                         </div>
                         <button class="btn btn-primary" onclick="startTrading()">Start Trading</button>
                         <button class="btn btn-secondary" onclick="stopTrading()">Stop Trading</button>
@@ -364,7 +523,13 @@
                         <h2>Place Order</h2>
                         <div class="form-group">
                             <label>Symbol</label>
-                            <input type="text" id="order-symbol" value="BTCUSDT">
+                            <select id="order-symbol">
+                                <option selected>BTCUSDT</option>
+                                <option>ETHUSDT</option>
+                                <option>BNBUSDT</option>
+                                <option>SOLUSDT</option>
+                                <option>XRPUSDT</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label>Side</label>
@@ -385,67 +550,97 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <h2>Current Positions</h2>
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Symbol</th>
-                                <th>Side</th>
-                                <th>Size</th>
-                                <th>Entry Price</th>
-                                <th>Current Price</th>
-                                <th>P&L</th>
-                                <th>Leverage</th>
-                                <th>Liquidation Price</th>
-                            </tr>
-                        </thead>
-                        <tbody id="current-positions">
-                            <tr>
-                                <td>BTCUSDT</td>
-                                <td>Long</td>
-                                <td>1.5</td>
-                                <td>$45,000</td>
-                                <td>$46,000</td>
-                                <td class="positive">$1,500</td>
-                                <td>3.0x</td>
-                                <td>$35,250</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Current Positions</h2>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Side</th>
+                                    <th>Size</th>
+                                    <th>Entry Price</th>
+                                    <th>Current Price</th>
+                                    <th>P&L</th>
+                                </tr>
+                            </thead>
+                            <tbody id="current-positions">
+                                <tr>
+                                    <td>BTCUSDT</td>
+                                    <td>Long</td>
+                                    <td>1.5</td>
+                                    <td>$45,000</td>
+                                    <td>$46,000</td>
+                                    <td class="positive">$1,500</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <h2>Position Distribution</h2>
+                        <div class="chart-container">
+                            <canvas id="position-distribution-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Real-time P&L</h2>
+                        <div class="chart-container">
+                            <canvas id="realtime-pnl-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Trading Activity</h2>
+                        <div class="chart-container">
+                            <canvas id="trading-activity-chart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Risk Tab -->
             <section id="risk" class="tab-content">
-                <div class="card">
-                    <h2>Risk Metrics Calculator</h2>
-                    <div class="form-group">
-                        <label>Entry Price</label>
-                        <input type="number" id="risk-entry-price" value="45000">
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Risk Metrics Calculator</h2>
+                        <div class="form-group">
+                            <label>Entry Price</label>
+                            <input type="number" id="risk-entry-price" value="45000">
+                        </div>
+                        <div class="form-group">
+                            <label>Current Price</label>
+                            <input type="number" id="risk-current-price" value="46000">
+                        </div>
+                        <div class="form-group">
+                            <label>Position Size (USD)</label>
+                            <input type="number" id="risk-position-size" value="50000">
+                        </div>
+                        <div class="form-group">
+                            <label>Leverage</label>
+                            <input type="number" id="risk-leverage" value="3.0" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>Funding Rate</label>
+                            <input type="number" id="risk-funding-rate" value="0.0001" step="0.00001">
+                        </div>
+                        <button class="btn btn-primary" onclick="calculateRiskMetrics()">Calculate</button>
                     </div>
-                    <div class="form-group">
-                        <label>Current Price</label>
-                        <input type="number" id="risk-current-price" value="46000">
+
+                    <div class="card">
+                        <h2>Risk Gauge</h2>
+                        <div class="chart-container">
+                            <canvas id="risk-gauge-chart"></canvas>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Position Size (USD)</label>
-                        <input type="number" id="risk-position-size" value="50000">
-                    </div>
-                    <div class="form-group">
-                        <label>Leverage</label>
-                        <input type="number" id="risk-leverage" value="3.0" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label>Funding Rate</label>
-                        <input type="number" id="risk-funding-rate" value="0.0001" step="0.00001">
-                    </div>
-                    <button class="btn btn-primary" onclick="calculateRiskMetrics()">Calculate</button>
                 </div>
 
-                <div class="card">
-                    <h2>Risk Analysis</h2>
-                    <div class="grid-2">
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Risk Analysis</h2>
                         <div class="metric">
                             <span class="label">Liquidation Price</span>
                             <span class="value" id="liq-price">$35,250</span>
@@ -471,25 +666,41 @@
                             <span class="value" id="funding-daily">$120.00</span>
                         </div>
                     </div>
+
+                    <div class="card">
+                        <h2>Position Sizing</h2>
+                        <div class="metric">
+                            <span class="label">Kelly Criterion</span>
+                            <span class="value" id="kelly-size">$15,000</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Fixed Fraction (2%)</span>
+                            <span class="value" id="fixed-size">$2,000</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Volatility-Adjusted</span>
+                            <span class="value" id="vol-size">$2,500</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Recommended</span>
+                            <span class="value" id="recommended-size">$2,000</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="card">
-                    <h2>Position Sizing Recommendations</h2>
-                    <div class="metric">
-                        <span class="label">Kelly Criterion</span>
-                        <span class="value" id="kelly-size">$15,000</span>
+                <div class="grid-2">
+                    <div class="card">
+                        <h2>Liquidation Risk</h2>
+                        <div class="chart-container">
+                            <canvas id="liquidation-risk-chart"></canvas>
+                        </div>
                     </div>
-                    <div class="metric">
-                        <span class="label">Fixed Fraction (2%)</span>
-                        <span class="value" id="fixed-size">$2,000</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Volatility-Adjusted</span>
-                        <span class="value" id="vol-size">$2,500</span>
-                    </div>
-                    <div class="metric">
-                        <span class="label">Recommended</span>
-                        <span class="value" id="recommended-size">$2,000</span>
+
+                    <div class="card">
+                        <h2>Funding Cost Analysis</h2>
+                        <div class="chart-container">
+                            <canvas id="funding-cost-chart"></canvas>
+                        </div>
                     </div>
                 </div>
             </section>
