@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     loadInitialData();
     connectWebSocket();
+
+    // Retry status update every 5 seconds
+    setInterval(updateSystemStatus, 5000);
 });
 
 function initializeApp() {
@@ -145,16 +148,28 @@ async function apiCall(endpoint, method = 'GET', data = null) {
 // ============================================================================
 
 async function updateSystemStatus() {
-    const status = await apiCall('/status');
-    if (status) {
-        document.getElementById('status-indicator').style.backgroundColor = '#000000';
-        document.getElementById('status-text').textContent = 'Connected';
+    try {
+        const status = await apiCall('/api/status');
+        const indicator = document.getElementById('status-indicator');
+        const text = document.getElementById('status-text');
+
+        if (indicator && text) {
+            if (status) {
+                indicator.style.backgroundColor = '#27ae60';
+                text.textContent = 'Connected';
+            } else {
+                indicator.style.backgroundColor = '#e74c3c';
+                text.textContent = 'Disconnected';
+            }
+        }
+    } catch (error) {
+        console.error('Failed to update system status:', error);
     }
 }
 
 async function loadInitialData() {
     // Load account info
-    const account = await apiCall('/trading/account');
+    const account = await apiCall('/api/trading/account');
     if (account) {
         document.getElementById('balance').textContent = `$${account.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
         document.getElementById('equity').textContent = `$${account.equity.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
@@ -163,19 +178,19 @@ async function loadInitialData() {
     }
 
     // Load positions
-    const positions = await apiCall('/trading/positions');
+    const positions = await apiCall('/api/trading/positions');
     if (positions && positions.positions.length > 0) {
         updatePositionsTable(positions.positions);
     }
 
     // Load backtest results
-    const results = await apiCall('/backtest/results');
+    const results = await apiCall('/api/backtest/results');
     if (results) {
         updateBacktestResults(results);
     }
 
     // Load model status
-    const modelStatus = await apiCall('/models/status');
+    const modelStatus = await apiCall('/api/models/status');
     if (modelStatus) {
         document.getElementById('lt-status').textContent = modelStatus.long_term.status;
         document.getElementById('lt-accuracy').textContent = `${(modelStatus.long_term.accuracy * 100).toFixed(0)}%`;
@@ -186,7 +201,7 @@ async function loadInitialData() {
     }
 
     // Load predictions
-    const predictions = await apiCall('/models/predictions');
+    const predictions = await apiCall('/api/models/predictions');
     if (predictions) {
         document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(1) .value').textContent = `${(predictions.long_term.mean * 100).toFixed(2)}%`;
         document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(2) .value').textContent = `${(predictions.long_term.std * 100).toFixed(2)}%`;
@@ -203,7 +218,7 @@ async function collectData() {
     const timeframes = Array.from(document.getElementById('timeframes-select').selectedOptions).map(o => o.value);
     const limit = parseInt(document.getElementById('limit-input').value);
 
-    const result = await apiCall('/data/collect', 'POST', {
+    const result = await apiCall('/api/data/collect', 'POST', {
         symbols,
         timeframes,
         limit
@@ -219,7 +234,7 @@ async function collectData() {
 // ============================================================================
 
 async function trainModels() {
-    const result = await apiCall('/models/train?symbol=BTCUSDT', 'POST');
+    const result = await apiCall('/api/models/train?symbol=BTCUSDT', 'POST');
     if (result) {
         showNotification('Model training started', 'success');
     }
@@ -236,7 +251,7 @@ async function runBacktest() {
     const endDate = document.getElementById('backtest-end').value;
     const capital = parseFloat(document.getElementById('backtest-capital').value);
 
-    const result = await apiCall('/backtest/run', 'POST', {
+    const result = await apiCall('/api/backtest/run', 'POST', {
         symbol,
         timeframe,
         start_date: startDate,
@@ -253,17 +268,17 @@ async function runBacktest() {
 }
 
 async function loadBacktestResults() {
-    const results = await apiCall('/backtest/results');
+    const results = await apiCall('/api/backtest/results');
     if (results) {
         updateBacktestResults(results);
     }
 
-    const trades = await apiCall('/backtest/trades');
+    const trades = await apiCall('/api/backtest/trades');
     if (trades) {
         updateTradesTable(trades.trades);
     }
 
-    const equity = await apiCall('/backtest/equity-curve');
+    const equity = await apiCall('/api/backtest/equity-curve');
     if (equity) {
         updateBacktestEquityChart(equity.equity_curve);
     }
@@ -298,14 +313,14 @@ function updateTradesTable(trades) {
 
 async function startTrading() {
     const mode = document.getElementById('trading-mode').value;
-    const result = await apiCall(`/trading/start?mode=${mode}`, 'POST');
+    const result = await apiCall(`/api/trading/start?mode=${mode}`, 'POST');
     if (result) {
         showNotification(`Trading started in ${mode} mode`, 'success');
     }
 }
 
 async function stopTrading() {
-    const result = await apiCall('/trading/stop', 'POST');
+    const result = await apiCall('/api/trading/stop', 'POST');
     if (result) {
         showNotification('Trading stopped', 'success');
     }
@@ -318,7 +333,7 @@ async function placeOrder() {
     const leverage = parseFloat(document.getElementById('order-leverage').value);
     const mode = document.getElementById('trading-mode').value;
 
-    const result = await apiCall('/trading/place-order', 'POST', {
+    const result = await apiCall('/api/trading/place-order', 'POST', {
         symbol,
         side,
         size,
@@ -357,7 +372,7 @@ async function calculateRiskMetrics() {
     const leverage = parseFloat(document.getElementById('risk-leverage').value);
     const fundingRate = parseFloat(document.getElementById('risk-funding-rate').value);
 
-    const result = await apiCall('/risk/metrics', 'POST', {
+    const result = await apiCall('/api/risk/metrics', 'POST', {
         entry_price: entryPrice,
         current_price: currentPrice,
         position_size_usd: positionSize,
@@ -928,19 +943,34 @@ function initializeFundingCostChart() {
 
 function connectWebSocket() {
     try {
-        const ws = new WebSocket('ws://localhost:8000/ws/market-data');
+        // WebSocket endpoint is optional - gracefully handle if not available
+        const ws = new WebSocket('ws://localhost:8000/api/ws/market-data');
+
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+        };
+
         ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'market_data') {
-                // Update market data in real-time
-                console.log('Market data:', data);
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'market_data') {
+                    // Update market data in real-time
+                    console.log('Market data:', data);
+                }
+            } catch (e) {
+                console.error('Failed to parse WebSocket message:', e);
             }
         };
+
         ws.onerror = (error) => {
-            console.error('WebSocket error:', error);
+            console.warn('WebSocket error (non-critical):', error);
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket disconnected');
         };
     } catch (error) {
-        console.error('WebSocket connection failed:', error);
+        console.warn('WebSocket connection failed (non-critical):', error);
     }
 }
 
