@@ -8,6 +8,8 @@ const API_BASE_URL = 'http://localhost:8000/api';
 let currentPrices = {};
 let priceUpdateInterval = null;
 let lastPriceUpdate = null;
+let predictionsUpdateInterval = null;
+let positionsUpdateInterval = null;
 
 // Supported cryptocurrencies
 const SUPPORTED_COINS = [
@@ -103,6 +105,10 @@ function switchTab(tabName) {
     // Add active class to clicked button
     event.target.classList.add('active');
 
+    // Clear existing intervals
+    if (predictionsUpdateInterval) clearInterval(predictionsUpdateInterval);
+    if (positionsUpdateInterval) clearInterval(positionsUpdateInterval);
+
     // Initialize charts based on tab
     setTimeout(() => {
         if (tabName === 'overview') {
@@ -110,6 +116,10 @@ function switchTab(tabName) {
             if (!returnsChart) initializeReturnsChart();
             if (!winrateChart) initializeWinrateChart();
             if (!drawdownChart) initializeDrawdownChart();
+        } else if (tabName === 'predictions') {
+            // Load predictions immediately and set auto-refresh
+            updatePredictions();
+            predictionsUpdateInterval = setInterval(updatePredictions, 30000);
         } else if (tabName === 'data') {
             if (!dataDistributionChart) initializeDataDistributionChart();
             if (!coinComparisonChart) initializeCoinComparisonChart();
@@ -122,6 +132,10 @@ function switchTab(tabName) {
             if (!backtestEquityChart) initializeBacktestEquityChart();
             if (!monthlyReturnsChart) initializeMonthlyReturnsChart();
         } else if (tabName === 'trading') {
+            // Load positions immediately and set auto-refresh
+            loadTradingPositions();
+            positionsUpdateInterval = setInterval(loadTradingPositions, 30000);
+
             if (!positionDistributionChart) initializePositionDistributionChart();
             if (!realtimePnlChart) initializeRealtimePnlChart();
             if (!tradingActivityChart) initializeTradingActivityChart();
@@ -1743,6 +1757,12 @@ function initializeLongTermPredictionsChartFiltered(data, timeframeFilter) {
         longTermPredictionsChart.destroy();
     }
 
+    // Calculate min and max for proper Y-axis scaling
+    const allValues = [...prices, ...upperBound, ...lowerBound];
+    const minValue = Math.min(...allValues);
+    const maxValue = Math.max(...allValues);
+    const padding = (maxValue - minValue) * 0.1;
+
     longTermPredictionsChart = new Chart(ctx.getContext('2d'), {
         type: 'line',
         data: {
@@ -1794,8 +1814,15 @@ function initializeLongTermPredictionsChartFiltered(data, timeframeFilter) {
             scales: {
                 y: {
                     beginAtZero: false,
+                    min: minValue - padding,
+                    max: maxValue + padding,
                     grid: { color: '#e0e0e0' },
-                    ticks: { color: '#666666' }
+                    ticks: {
+                        color: '#666666',
+                        callback: function(value) {
+                            return '$' + value.toLocaleString('en-US', {maximumFractionDigits: 0});
+                        }
+                    }
                 },
                 x: {
                     grid: { display: false },

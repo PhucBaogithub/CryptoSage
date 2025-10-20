@@ -380,11 +380,22 @@ html, body {
     border-collapse: collapse;
     font-size: 14px;
     background-color: #ffffff;
+    table-layout: fixed;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: var(--border-radius);
 }
 
 .table thead {
     background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
     border-bottom: 2px solid #2980b9;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .table th {
@@ -392,12 +403,18 @@ html, body {
     text-align: left;
     font-weight: 700;
     color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .table td {
     padding: var(--spacing-md);
     border-bottom: 1px solid var(--border-color);
     color: var(--primary-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .table tbody tr:hover {
