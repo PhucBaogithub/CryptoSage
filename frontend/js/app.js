@@ -169,44 +169,80 @@ async function updateSystemStatus() {
 }
 
 async function loadInitialData() {
-    // Load account info
-    const account = await apiCall('/api/trading/account');
-    if (account) {
-        document.getElementById('balance').textContent = `$${account.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        document.getElementById('equity').textContent = `$${account.equity.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        document.getElementById('unrealized-pnl').textContent = `${account.unrealized_pnl >= 0 ? '+' : ''}$${account.unrealized_pnl.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        document.getElementById('margin-ratio').textContent = `${(account.margin_ratio * 100).toFixed(1)}%`;
+    try {
+        // Load account info
+        const account = await apiCall('/api/trading/account');
+        if (account) {
+            const balanceEl = document.getElementById('balance');
+            const equityEl = document.getElementById('equity');
+            const pnlEl = document.getElementById('unrealized-pnl');
+            const marginEl = document.getElementById('margin-ratio');
+
+            if (balanceEl) balanceEl.textContent = `$${account.balance.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            if (equityEl) equityEl.textContent = `$${account.equity.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            if (pnlEl) pnlEl.textContent = `${account.unrealized_pnl >= 0 ? '+' : ''}$${account.unrealized_pnl.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            if (marginEl) marginEl.textContent = `${(account.margin_ratio * 100).toFixed(1)}%`;
+        }
+    } catch (error) {
+        console.error('Error loading account info:', error);
     }
 
-    // Load positions
-    const positions = await apiCall('/api/trading/positions');
-    if (positions && positions.positions.length > 0) {
-        updatePositionsTable(positions.positions);
+    try {
+        // Load positions
+        const positions = await apiCall('/api/trading/positions');
+        if (positions && positions.positions && positions.positions.length > 0) {
+            updatePositionsTable(positions.positions);
+        }
+    } catch (error) {
+        console.error('Error loading positions:', error);
     }
 
-    // Load backtest results
-    const results = await apiCall('/api/backtest/results');
-    if (results) {
-        updateBacktestResults(results);
+    try {
+        // Load backtest results
+        const results = await apiCall('/api/backtest/results');
+        if (results) {
+            updateBacktestResults(results);
+        }
+    } catch (error) {
+        console.error('Error loading backtest results:', error);
     }
 
-    // Load model status
-    const modelStatus = await apiCall('/api/models/status');
-    if (modelStatus) {
-        document.getElementById('lt-status').textContent = modelStatus.long_term.status;
-        document.getElementById('lt-accuracy').textContent = `${(modelStatus.long_term.accuracy * 100).toFixed(0)}%`;
-        document.getElementById('lt-loss').textContent = modelStatus.long_term.loss.toFixed(4);
-        document.getElementById('st-status').textContent = modelStatus.short_term.status;
-        document.getElementById('st-accuracy').textContent = `${(modelStatus.short_term.accuracy * 100).toFixed(0)}%`;
-        document.getElementById('st-loss').textContent = modelStatus.short_term.loss.toFixed(4);
+    try {
+        // Load model status
+        const modelStatus = await apiCall('/api/models/status');
+        if (modelStatus) {
+            const ltStatusEl = document.getElementById('lt-status');
+            const ltAccuracyEl = document.getElementById('lt-accuracy');
+            const ltLossEl = document.getElementById('lt-loss');
+            const stStatusEl = document.getElementById('st-status');
+            const stAccuracyEl = document.getElementById('st-accuracy');
+            const stLossEl = document.getElementById('st-loss');
+
+            if (ltStatusEl) ltStatusEl.textContent = modelStatus.long_term.status;
+            if (ltAccuracyEl) ltAccuracyEl.textContent = `${(modelStatus.long_term.accuracy * 100).toFixed(0)}%`;
+            if (ltLossEl) ltLossEl.textContent = modelStatus.long_term.loss.toFixed(4);
+            if (stStatusEl) stStatusEl.textContent = modelStatus.short_term.status;
+            if (stAccuracyEl) stAccuracyEl.textContent = `${(modelStatus.short_term.accuracy * 100).toFixed(0)}%`;
+            if (stLossEl) stLossEl.textContent = modelStatus.short_term.loss.toFixed(4);
+        }
+    } catch (error) {
+        console.error('Error loading model status:', error);
     }
 
-    // Load predictions
-    const predictions = await apiCall('/api/models/predictions');
-    if (predictions) {
-        document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(1) .value').textContent = `${(predictions.long_term.mean * 100).toFixed(2)}%`;
-        document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(2) .value').textContent = `${(predictions.long_term.std * 100).toFixed(2)}%`;
-        document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(3) .value').textContent = `${(predictions.long_term.confidence * 100).toFixed(0)}%`;
+    try {
+        // Load predictions
+        const predictions = await apiCall('/api/models/predictions');
+        if (predictions) {
+            const elem1 = document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(1) .value');
+            const elem2 = document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(2) .value');
+            const elem3 = document.querySelector('[data-tab="models"] .grid-2 div:nth-child(1) .metric:nth-child(3) .value');
+
+            if (elem1) elem1.textContent = `${(predictions.long_term.mean * 100).toFixed(2)}%`;
+            if (elem2) elem2.textContent = `${(predictions.long_term.std * 100).toFixed(2)}%`;
+            if (elem3) elem3.textContent = `${(predictions.long_term.confidence * 100).toFixed(0)}%`;
+        }
+    } catch (error) {
+        console.error('Error loading predictions:', error);
     }
 }
 
