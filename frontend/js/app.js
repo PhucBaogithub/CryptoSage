@@ -39,13 +39,17 @@ const chartColors = {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    initializeApp();
-    setupEventListeners();
-    loadInitialData();
-    connectWebSocket();
+    try {
+        initializeApp();
+        setupEventListeners();
+        loadInitialData();
+        connectWebSocket();
 
-    // Retry status update every 5 seconds
-    setInterval(updateSystemStatus, 5000);
+        // Retry status update every 5 seconds
+        setInterval(updateSystemStatus, 5000);
+    } catch (error) {
+        console.error('Error during initialization:', error);
+    }
 });
 
 function initializeApp() {
